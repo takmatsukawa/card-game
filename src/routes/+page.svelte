@@ -151,16 +151,45 @@
   function getCardBackgroundColor(card: Card): string {
     return card.type === 'monster' ? 'bg-blue-100' : 'bg-purple-100';
   }
+
+  // ターンエンド処理
+  function endTurn() {
+    // 現在のプレイヤーのインデックスを取得
+    const currentPlayerIndex = gameState.currentPlayer;
+    
+    // 次のプレイヤーのインデックスを計算
+    const nextPlayerIndex = (currentPlayerIndex + 1) % 2;
+    
+    // ターンを次のプレイヤーに移す
+    gameState = {
+      ...gameState,
+      currentPlayer: nextPlayerIndex
+    };
+
+    // 相手プレイヤーのターンの場合、自動的にターンエンド
+    if (nextPlayerIndex === 1) {
+      setTimeout(() => {
+        endTurn();
+      }, 1000); // 1秒後に自動的にターンエンド
+    }
+  }
 </script>
 
 <div class="min-h-screen bg-gray-100 py-8 flex flex-col">
   <div class="max-w-4xl mx-auto px-4 w-full">
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">カードゲーム</h1>
     
+    <!-- 現在のターン表示 -->
+    <div class="text-center mb-4">
+      <p class="text-xl font-bold">
+        現在のターン: {gameState.players[gameState.currentPlayer].name}
+      </p>
+    </div>
+    
     <!-- プレイヤーステータス（2人分） -->
     <div class="grid grid-cols-2 gap-4 mb-8">
       {#each gameState.players as player, i}
-        <div class="bg-white p-4 rounded-lg shadow">
+        <div class="bg-white p-4 rounded-lg shadow {gameState.currentPlayer === i ? 'ring-2 ring-blue-500' : ''}">
           <h2 class="text-xl font-bold mb-2">{player.name}</h2>
           <p>HP: {player.hp}</p>
           <p>マナ: {player.mana}</p>
@@ -169,6 +198,18 @@
         </div>
       {/each}
     </div>
+
+    <!-- ターンエンドボタン -->
+    {#if gameState.currentPlayer === 0}
+      <div class="text-center mb-8">
+        <button
+          on:click={endTurn}
+          class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+        >
+          ターンエンド
+        </button>
+      </div>
+    {/if}
   </div>
 
   <!-- フィールド（盤面＋プレイヤーイメージ） -->
