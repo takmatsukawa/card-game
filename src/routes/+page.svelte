@@ -326,7 +326,7 @@
   <div class="mt-auto bg-gray-200 py-4">
     <div class="max-w-4xl mx-auto px-4">
       <h2 class="text-xl font-bold mb-4">手札</h2>
-      <div class="flex gap-4 overflow-x-auto pb-4">
+      <div class="flex gap-4 overflow-x-auto p-4">
         {#each gameState.players[0].hand as card}
           <div 
             class="flex-shrink-0 w-48 h-64 {getCardBackgroundColor(card)} rounded-lg shadow-lg p-4 cursor-pointer transition-transform hover:scale-105 {selectedCard?.id === card.id ? 'ring-4 ring-blue-500' : ''}"
