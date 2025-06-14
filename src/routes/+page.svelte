@@ -250,6 +250,7 @@
       <div class="text-center mb-8">
         <button
           on:click={endTurn}
+          on:keydown={(e) => e.key === 'Enter' && endTurn()}
           class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
         >
           ターンエンド
@@ -301,6 +302,9 @@
             <div 
               class="w-20 h-20 flex items-center justify-center border rounded bg-gray-50 cursor-pointer hover:bg-gray-100 {selectedCell?.row === rowIndex && selectedCell?.col === colIndex ? 'ring-2 ring-blue-500' : ''}"
               on:click={() => selectCell(rowIndex, colIndex)}
+              on:keydown={(e) => e.key === 'Enter' && selectCell(rowIndex, colIndex)}
+              role="button"
+              tabindex="0"
             >
               {#if cell.card}
                 <div class="text-center">
@@ -327,6 +331,9 @@
           <div 
             class="flex-shrink-0 w-48 h-64 {getCardBackgroundColor(card)} rounded-lg shadow-lg p-4 cursor-pointer transition-transform hover:scale-105 {selectedCard?.id === card.id ? 'ring-4 ring-blue-500' : ''}"
             on:click={() => selectCard(card)}
+            on:keydown={(e) => e.key === 'Enter' && selectCard(card)}
+            role="button"
+            tabindex="0"
           >
             <h3 class="font-bold text-lg mb-2">{card.name}</h3>
             {#if card.type === 'monster'}
@@ -359,6 +366,7 @@
     <button 
       class="mt-2 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm"
       on:click={resetSelection}
+      on:keydown={(e) => e.key === 'Enter' && resetSelection()}
     >
       キャンセル
     </button>
