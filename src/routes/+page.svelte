@@ -32,6 +32,16 @@
   // カードの型（モンスターとマジックのユニオン型）
   type Card = MonsterCard | MagicCard;
 
+  // 盤面の1マス
+  interface FieldCell {
+    card: MonsterCard | null;
+    isWaiting: boolean; // 召喚酔い状態
+  }
+
+  // 2x2の盤面
+  // [行][列] でアクセス（例: fieldGrid[0][1]）
+  type FieldGrid = FieldCell[][];
+
   // プレイヤーの型
   interface Player {
     id: number;
@@ -41,6 +51,7 @@
     deck: Card[];
     hand: Card[];
     field: MonsterCard[];
+    fieldGrid: FieldGrid;
   }
 
   // ゲームの状態
@@ -54,7 +65,8 @@
         mana: 10,
         deck: [],
         hand: [],
-        field: []
+        field: [],
+        fieldGrid: createEmptyFieldGrid()
       },
       {
         id: 2,
@@ -63,7 +75,8 @@
         mana: 10,
         deck: [],
         hand: [],
-        field: []
+        field: [],
+        fieldGrid: createEmptyFieldGrid()
       }
     ] as Player[]
   };
@@ -108,6 +121,14 @@
     ];
   }
 
+  // 空の2x2盤面を作成する関数
+  function createEmptyFieldGrid(): FieldGrid {
+    return [
+      [ { card: null, isWaiting: false }, { card: null, isWaiting: false } ],
+      [ { card: null, isWaiting: false }, { card: null, isWaiting: false } ]
+    ];
+  }
+
   onMount(() => {
     // サンプルカードをデッキに追加
     const newPlayers = gameState.players.map(player => {
@@ -115,7 +136,8 @@
       const newPlayer = {
         ...player,
         deck: cards,
-        hand: [...cards]
+        hand: [...cards],
+        fieldGrid: createEmptyFieldGrid()
       };
       return newPlayer;
     });
@@ -135,7 +157,7 @@
   <div class="max-w-4xl mx-auto px-4 w-full">
     <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">カードゲーム</h1>
     
-    <!-- ゲームの状態表示 -->
+    <!-- プレイヤーステータス（2人分） -->
     <div class="grid grid-cols-2 gap-4 mb-8">
       {#each gameState.players as player, i}
         <div class="bg-white p-4 rounded-lg shadow">
@@ -146,6 +168,63 @@
           <p>場のモンスター: {player.field.length}体</p>
         </div>
       {/each}
+    </div>
+  </div>
+
+  <!-- フィールド（盤面＋プレイヤーイメージ） -->
+  <div class="flex flex-col items-center justify-center my-8">
+    <!-- 相手プレイヤー側 -->
+    <div class="flex flex-col items-center mb-8">
+      <!-- 2x2マス -->
+      <div class="grid grid-cols-2 gap-4 mb-2">
+        {#each gameState.players[1].fieldGrid as row}
+          {#each row as cell}
+            <div class="w-20 h-20 flex items-center justify-center border rounded bg-gray-50">
+              {#if cell.card}
+                <div class="text-center">
+                  <div class="font-bold text-xs">{cell.card.name}</div>
+                  <div class="text-xs">HP: {cell.card.hp}</div>
+                  {#if cell.isWaiting}
+                    <div class="text-xs text-yellow-600">待機中</div>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        {/each}
+      </div>
+      <!-- プレイヤーイメージ（相手） -->
+      <svg width="40" height="50" viewBox="0 0 40 50">
+        <circle cx="20" cy="15" r="10" fill="#bbb" />
+        <rect x="10" y="25" width="20" height="20" rx="8" fill="#bbb" />
+      </svg>
+    </div>
+
+    <!-- 自分プレイヤー側 -->
+    <div class="flex flex-col items-center mt-8">
+      <!-- プレイヤーイメージ（自分） -->
+      <svg width="40" height="50" viewBox="0 0 40 50">
+        <circle cx="20" cy="15" r="10" fill="#4b9cff" />
+        <rect x="10" y="25" width="20" height="20" rx="8" fill="#4b9cff" />
+      </svg>
+      <!-- 2x2マス -->
+      <div class="grid grid-cols-2 gap-4 mt-2">
+        {#each gameState.players[0].fieldGrid as row}
+          {#each row as cell}
+            <div class="w-20 h-20 flex items-center justify-center border rounded bg-gray-50">
+              {#if cell.card}
+                <div class="text-center">
+                  <div class="font-bold text-xs">{cell.card.name}</div>
+                  <div class="text-xs">HP: {cell.card.hp}</div>
+                  {#if cell.isWaiting}
+                    <div class="text-xs text-yellow-600">待機中</div>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        {/each}
+      </div>
     </div>
   </div>
 
