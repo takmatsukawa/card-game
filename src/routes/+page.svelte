@@ -81,6 +81,10 @@
     ] as Player[]
   };
 
+  // 選択中のカードとマスの状態
+  let selectedCard: Card | null = null;
+  let selectedCell: { row: number; col: number } | null = null;
+
   // サンプルカードの作成
   function createSampleCards(): Card[] {
     return [
@@ -173,6 +177,48 @@
       }, 1000); // 1秒後に自動的にターンエンド
     }
   }
+
+  // カードを選択する関数
+  function selectCard(card: Card) {
+    if (card.type === 'monster' && gameState.players[gameState.currentPlayer].mana >= 1) {
+      selectedCard = card;
+    }
+  }
+
+  // マスを選択する関数
+  function selectCell(row: number, col: number) {
+    if (selectedCard && selectedCard.type === 'monster') {
+      const currentPlayer = gameState.players[gameState.currentPlayer];
+      const cell = currentPlayer.fieldGrid[row][col];
+      
+      if (!cell.card) {
+        // マナを消費してモンスターを配置
+        currentPlayer.mana -= 1;
+        cell.card = selectedCard as MonsterCard;
+        cell.isWaiting = true;
+        
+        // 手札からカードを削除
+        const cardId = selectedCard.id;
+        currentPlayer.hand = currentPlayer.hand.filter(c => c.id !== cardId);
+        
+        // 選択状態をリセット
+        selectedCard = null;
+        selectedCell = null;
+
+        // gameStateを更新してリアクティビティをトリガー
+        gameState = {
+          ...gameState,
+          players: [...gameState.players]
+        };
+      }
+    }
+  }
+
+  // カードの選択状態をリセット
+  function resetSelection() {
+    selectedCard = null;
+    selectedCell = null;
+  }
 </script>
 
 <div class="min-h-screen bg-gray-100 py-8 flex flex-col">
@@ -218,8 +264,8 @@
     <div class="flex flex-col items-center mb-8">
       <!-- 2x2マス -->
       <div class="grid grid-cols-2 gap-4 mb-2">
-        {#each gameState.players[1].fieldGrid as row}
-          {#each row as cell}
+        {#each gameState.players[1].fieldGrid as row, rowIndex}
+          {#each row as cell, colIndex}
             <div class="w-20 h-20 flex items-center justify-center border rounded bg-gray-50">
               {#if cell.card}
                 <div class="text-center">
@@ -250,9 +296,12 @@
       </svg>
       <!-- 2x2マス -->
       <div class="grid grid-cols-2 gap-4 mt-2">
-        {#each gameState.players[0].fieldGrid as row}
-          {#each row as cell}
-            <div class="w-20 h-20 flex items-center justify-center border rounded bg-gray-50">
+        {#each gameState.players[0].fieldGrid as row, rowIndex}
+          {#each row as cell, colIndex}
+            <div 
+              class="w-20 h-20 flex items-center justify-center border rounded bg-gray-50 cursor-pointer hover:bg-gray-100 {selectedCell?.row === rowIndex && selectedCell?.col === colIndex ? 'ring-2 ring-blue-500' : ''}"
+              on:click={() => selectCell(rowIndex, colIndex)}
+            >
               {#if cell.card}
                 <div class="text-center">
                   <div class="font-bold text-xs">{cell.card.name}</div>
@@ -275,7 +324,10 @@
       <h2 class="text-xl font-bold mb-4">手札</h2>
       <div class="flex gap-4 overflow-x-auto pb-4">
         {#each gameState.players[0].hand as card}
-          <div class="flex-shrink-0 w-48 h-64 {getCardBackgroundColor(card)} rounded-lg shadow-lg p-4">
+          <div 
+            class="flex-shrink-0 w-48 h-64 {getCardBackgroundColor(card)} rounded-lg shadow-lg p-4 cursor-pointer transition-transform hover:scale-105 {selectedCard?.id === card.id ? 'ring-4 ring-blue-500' : ''}"
+            on:click={() => selectCard(card)}
+          >
             <h3 class="font-bold text-lg mb-2">{card.name}</h3>
             {#if card.type === 'monster'}
               <p class="mb-2">HP: {card.hp}</p>
@@ -298,6 +350,20 @@
     </div>
   </div>
 </div>
+
+<!-- 選択中のカードの情報表示 -->
+{#if selectedCard}
+  <div class="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-lg">
+    <p class="font-bold">選択中のカード: {selectedCard?.name}</p>
+    <p class="text-sm">マスを選択して配置してください</p>
+    <button 
+      class="mt-2 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded text-sm"
+      on:click={resetSelection}
+    >
+      キャンセル
+    </button>
+  </div>
+{/if}
 
 <style>
   /* スクロールバーのカスタマイズ */
