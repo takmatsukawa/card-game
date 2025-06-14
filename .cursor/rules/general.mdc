@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# ファイル編集後のルール
+
+ファイルを編集したら、最後に必ず `npm run format` を実行すること。
