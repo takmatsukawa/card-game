@@ -162,7 +162,169 @@
 		return card.type === 'monster' ? 'bg-blue-100' : 'bg-purple-100';
 	}
 
-	// ターンエンド処理
+	// カードの選択状態をリセット
+	function resetSelection() {
+		selectedCard = null;
+		selectedCell = null;
+	}
+
+	// CPUの行動を制御する関数
+	function cpuAction() {
+		const cpu = gameState.players[1];
+		const player = gameState.players[0];
+		
+		// 1. 場の状況分析
+		const emptyCells = findEmptyCells(cpu.fieldGrid);
+		const playableCards = cpu.hand.filter(card => 
+			card.type === 'monster' && cpu.mana >= 1
+		);
+		
+		// 2. カード配置ロジック
+		if (emptyCells.length > 0 && playableCards.length > 0) {
+			// 最も強いカードを選択
+			const bestCard = selectBestCard(playableCards);
+			// 最適な位置に配置
+			const bestPosition = findBestPosition(emptyCells);
+			placeCard(bestCard, bestPosition);
+		}
+		
+		// 3. 攻撃判断
+		if (canAttack()) {
+			const attackTargets = findAttackTargets();
+			executeBestAttack(attackTargets);
+		}
+	}
+
+	// 空いているマスを探す
+	function findEmptyCells(fieldGrid: FieldGrid): { row: number; col: number }[] {
+		const emptyCells: { row: number; col: number }[] = [];
+		for (let row = 0; row < fieldGrid.length; row++) {
+			for (let col = 0; col < fieldGrid[row].length; col++) {
+				if (!fieldGrid[row][col].card) {
+					emptyCells.push({ row, col });
+				}
+			}
+		}
+		return emptyCells;
+	}
+
+	// 最適なカードを選択
+	function selectBestCard(cards: Card[]): Card {
+		// モンスターカードのみを対象とする
+		const monsterCards = cards.filter(card => card.type === 'monster') as MonsterCard[];
+		
+		// HPと攻撃力の合計で評価
+		return monsterCards.reduce((best, current) => {
+			const currentValue = current.hp + current.commands.reduce((sum, cmd) => sum + cmd.damage, 0);
+			const bestValue = (best as MonsterCard).hp + (best as MonsterCard).commands.reduce((sum, cmd) => sum + cmd.damage, 0);
+			return currentValue > bestValue ? current : best;
+		});
+	}
+
+	// 最適な配置位置を選択
+	function findBestPosition(emptyCells: { row: number; col: number }[]): { row: number; col: number } {
+		// 現在は単純に最初の空きマスを選択
+		return emptyCells[0];
+	}
+
+	// カードを配置
+	function placeCard(card: Card, position: { row: number; col: number }) {
+		const cpu = gameState.players[1];
+		const cell = cpu.fieldGrid[position.row][position.col];
+		
+		if (!cell.card) {
+			cpu.mana -= 1;
+			cell.card = card as MonsterCard;
+			cell.isWaiting = true;
+			
+			// 手札からカードを削除
+			const cardId = card.id;
+			cpu.hand = cpu.hand.filter((c) => c.id !== cardId);
+			
+			// gameStateを更新
+			gameState = {
+				...gameState,
+				players: [...gameState.players]
+			};
+		}
+	}
+
+	// 攻撃可能かどうかを判定
+	function canAttack(): boolean {
+		const cpu = gameState.players[1];
+		return cpu.fieldGrid.some(row => 
+			row.some(cell => cell.card && !cell.isWaiting)
+		);
+	}
+
+	// 攻撃対象を探す
+	function findAttackTargets(): { row: number; col: number }[] {
+		const player = gameState.players[0];
+		const targets: { row: number; col: number }[] = [];
+		
+		for (let row = 0; row < player.fieldGrid.length; row++) {
+			for (let col = 0; col < player.fieldGrid[row].length; col++) {
+				if (player.fieldGrid[row][col].card) {
+					targets.push({ row, col });
+				}
+			}
+		}
+		
+		return targets;
+	}
+
+	// 最適な攻撃を実行
+	function executeBestAttack(targets: { row: number; col: number }[]) {
+		const cpu = gameState.players[1];
+		const player = gameState.players[0];
+		
+		// 攻撃可能なモンスターを探す
+		const attackers: { row: number; col: number; card: MonsterCard }[] = [];
+		for (let row = 0; row < cpu.fieldGrid.length; row++) {
+			for (let col = 0; col < cpu.fieldGrid[row].length; col++) {
+				const cell = cpu.fieldGrid[row][col];
+				if (cell.card && !cell.isWaiting) {
+					attackers.push({ row, col, card: cell.card });
+				}
+			}
+		}
+		
+		// 各攻撃者について最適な攻撃を実行
+		attackers.forEach(attacker => {
+			if (targets.length > 0) {
+				// 最も弱いモンスターを攻撃
+				const target = targets.reduce((weakest, current) => {
+					const currentHP = player.fieldGrid[current.row][current.col].card?.hp || 0;
+					const weakestHP = player.fieldGrid[weakest.row][weakest.col].card?.hp || 0;
+					return currentHP < weakestHP ? current : weakest;
+				});
+				
+				// 攻撃を実行
+				const targetCard = player.fieldGrid[target.row][target.col].card;
+				if (targetCard) {
+					// 最も強い攻撃コマンドを使用
+					const bestCommand = attacker.card.commands.reduce((best, current) => 
+						current.damage > best.damage ? current : best
+					);
+					
+					targetCard.hp -= bestCommand.damage;
+					
+					// HPが0以下になったらカードを削除
+					if (targetCard.hp <= 0) {
+						player.fieldGrid[target.row][target.col].card = null;
+					}
+				}
+			}
+		});
+		
+		// gameStateを更新
+		gameState = {
+			...gameState,
+			players: [...gameState.players]
+		};
+	}
+
+	// ターンエンド処理を更新
 	function endTurn() {
 		// 現在のプレイヤーのインデックスを取得
 		const currentPlayerIndex = gameState.currentPlayer;
@@ -176,11 +338,15 @@
 			currentPlayer: nextPlayerIndex
 		};
 
-		// 相手プレイヤーのターンの場合、自動的にターンエンド
+		// 相手プレイヤーのターンの場合、CPUの行動を実行
 		if (nextPlayerIndex === 1) {
 			setTimeout(() => {
-				endTurn();
-			}, 1000); // 1秒後に自動的にターンエンド
+				cpuAction();
+				// CPUの行動後に自動的にターンエンド
+				setTimeout(() => {
+					endTurn();
+				}, 1000);
+			}, 1000);
 		}
 	}
 
@@ -218,12 +384,6 @@
 				};
 			}
 		}
-	}
-
-	// カードの選択状態をリセット
-	function resetSelection() {
-		selectedCard = null;
-		selectedCell = null;
 	}
 </script>
 
