@@ -90,8 +90,8 @@
 		<div class="mb-8 flex flex-col items-center">
 			<!-- 2x2マス -->
 			<div class="mb-2 grid grid-cols-2 gap-4">
-				{#each players[1].fieldGrid as row, rowIndex}
-					{#each row as cell, colIndex}
+				{#each players[1].fieldGrid.toReversed() as row, rowIndex}
+					{#each row.toReversed() as cell, colIndex}
 						<div class="flex h-20 w-20 items-center justify-center rounded border bg-gray-50">
 							{#if cell.card}
 								<div class="text-center">
