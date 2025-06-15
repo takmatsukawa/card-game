@@ -208,14 +208,13 @@ export const gameStateMachine = setup({
 		updateWaitingStatus: assign({
 			players: ({ context }) => {
 				const newPlayers = [...context.players];
-				// 全プレイヤーの待機状態を解除
-				newPlayers.forEach(player => {
-					player.fieldGrid.forEach(row => {
-						row.forEach(cell => {
-							if (cell.card) {
-								cell.isWaiting = false;
-							}
-						});
+				// 現在のプレイヤーのモンスターの待機状態のみを解除
+				const currentPlayerObj = newPlayers[context.currentPlayer];
+				currentPlayerObj.fieldGrid.forEach(row => {
+					row.forEach(cell => {
+						if (cell.card) {
+							cell.isWaiting = false;
+						}
 					});
 				});
 				return newPlayers;
