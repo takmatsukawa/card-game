@@ -55,6 +55,11 @@ The game uses XState for predictable state management (`src/lib/gameStateMachine
 
 ## Development Notes
 
+### Code Quality and Formatting
+
+- **After Task Completion**: Always run `npm run format` after completing any development task to ensure consistent code formatting across the project
+- This applies to all code changes including new features, bug fixes, refactoring, and test additions
+
 ### XState Implementation Pattern
 
 The game follows XState best practices for state management:
