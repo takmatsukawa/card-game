@@ -65,7 +65,6 @@
 					<p>HP: {player.hp}</p>
 					<p>マナ: {player.mana}</p>
 					<p>手札: {player.hand.length}枚</p>
-					<p>場のモンスター: {player.field.length}体</p>
 				</div>
 			{/each}
 		</div>
