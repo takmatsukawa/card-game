@@ -278,9 +278,6 @@ export const gameStateMachine = setup({
 					playableCards.splice(playableCards.indexOf(bestCard), 1);
 				}
 
-				// 攻撃処理
-				executeAttacks(cpu, player);
-
 				return newPlayers;
 			}
 		})
@@ -363,53 +360,6 @@ function selectBestCard(cards: Card[]): Card {
 
 function findBestPosition(emptyCells: { row: number; col: number }[]): { row: number; col: number } {
 	return emptyCells[0];
-}
-
-function executeAttacks(cpu: Player, player: Player) {
-	// 攻撃可能なモンスターを探す
-	const attackers: { row: number; col: number; card: MonsterCard }[] = [];
-	for (let row = 0; row < cpu.fieldGrid.length; row++) {
-		for (let col = 0; col < cpu.fieldGrid[row].length; col++) {
-			const cell = cpu.fieldGrid[row][col];
-			if (cell.card && !cell.isWaiting) {
-				attackers.push({ row, col, card: cell.card });
-			}
-		}
-	}
-
-	// 攻撃対象を探す
-	const targets: { row: number; col: number }[] = [];
-	for (let row = 0; row < player.fieldGrid.length; row++) {
-		for (let col = 0; col < player.fieldGrid[row].length; col++) {
-			if (player.fieldGrid[row][col].card) {
-				targets.push({ row, col });
-			}
-		}
-	}
-
-	// 攻撃実行
-	attackers.forEach(attacker => {
-		if (targets.length > 0) {
-			const target = targets.reduce((weakest, current) => {
-				const currentHP = player.fieldGrid[current.row][current.col].card?.hp || 0;
-				const weakestHP = player.fieldGrid[weakest.row][weakest.col].card?.hp || 0;
-				return currentHP < weakestHP ? current : weakest;
-			});
-
-			const targetCard = player.fieldGrid[target.row][target.col].card;
-			if (targetCard) {
-				const bestCommand = attacker.card.commands.reduce((best, current) => 
-					current.damage > best.damage ? current : best
-				);
-
-				targetCard.hp -= bestCommand.damage;
-
-				if (targetCard.hp <= 0) {
-					player.fieldGrid[target.row][target.col].card = null;
-				}
-			}
-		}
-	});
 }
 
 // アクターの作成関数
