@@ -4,33 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a SvelteKit-based card game built with Svelte 5, TypeScript, and Tailwind CSS.
+This is a SvelteKit-based card game built with Svelte 5, TypeScript, Tailwind CSS, and XState for state management.
 
 ## Key Commands
 
-### Development
-- `npm run dev` - Start development server
-- `npm run dev -- --open` - Start dev server and open browser
-
-### Building & Packaging  
-- `npm run build` - Build production app and package library
-- `npm run preview` - Preview production build
-- `npm run prepack` - Sync and package library with publint validation
-
-### Code Quality
-- `npm run check` - Run svelte-check for TypeScript validation
-- `npm run check:watch` - Run svelte-check in watch mode
-- `npm run format` - Format code with Prettier
-- `npm run lint` - Check code formatting with Prettier
-
-### Testing
-- `npm run test` - Run all tests (unit + e2e)
-- `npm run test:unit` - Run unit tests with Vitest
-- `npm run test:e2e` - Run end-to-end tests with Playwright
-
-### Storybook
-- `npm run storybook` - Start Storybook dev server on port 6006
-- `npm run build-storybook` - Build Storybook for production
+See @package.json for available npm commands for this project.
 
 ## Architecture
 
@@ -42,8 +20,17 @@ The main game implementation is in `src/routes/+page.svelte` and includes:
 - Mana system for card costs
 - Combat system with HP and damage
 
+### State Management with XState
+The game uses XState for predictable state management (`src/lib/gameStateMachine.ts`):
+- **States**: `playerTurn` and `cpuTurn` with automatic transitions
+- **Events**: `SELECT_CARD`, `PLACE_CARD`, `END_TURN`, `RESET_SELECTION`
+- **Context**: Players, current turn, selected cards/cells, winner state
+- **Actions**: Card placement, turn switching, CPU behavior, waiting status updates
+- **Guards**: Validation for card placement and turn restrictions
+
 ### Library Structure
-- `src/lib/` - Library components and utilities (currently minimal)
+- `src/lib/gameStateMachine.ts` - XState state machine with game logic
+- `src/lib/index.ts` - Library exports including state machine
 - `src/routes/` - Demo/showcase application
 - `src/stories/` - Storybook components and stories
 
@@ -56,15 +43,18 @@ The main game implementation is in `src/routes/+page.svelte` and includes:
 - **SvelteKit**: Main framework with adapter-auto
 - **Vite**: Build tool with Tailwind CSS integration
 - **TypeScript**: Full type checking with svelte-check
+- **XState**: State machine library with @xstate/svelte integration
 - **Package**: Exports from `src/lib/` as reusable library
 
 ## Development Notes
 
-### Game State Management
-The game uses Svelte 5's `$state` runes for reactive state management. Key state includes:
-- Player data (HP, mana, hand, field grid)
-- Current turn tracking
-- Card selection states
+### XState Implementation Pattern
+The game follows XState best practices for state management:
+- Use `useMachine()` hook from `@xstate/svelte` for component integration
+- Access context via `$snapshot.context` reactive statement
+- Send events using `send({ type: 'EVENT_NAME', ...payload })`
+- State transitions are handled automatically by the machine
+- CPU behavior is implemented as machine actions with delayed transitions
 
 ### CSS Framework  
 Uses Tailwind CSS v4 with custom scrollbar styling in the main game component.
@@ -75,4 +65,12 @@ Uses Tailwind CSS v4 with custom scrollbar styling in the main game component.
 - E2E tests build and preview the app before running
 
 ### Package Export
-The library exports from `src/lib/index.ts` and builds to `dist/` directory with TypeScript declarations.
+The library exports from `src/lib/index.ts` and builds to `dist/` directory with TypeScript declarations. The main export includes the `gameStateMachine` and related types for reuse in other projects.
+
+### Working with State Machines
+When extending the game logic:
+1. **Adding new events**: Define in `GameEvent` type and add handlers in machine config
+2. **New state transitions**: Add states in the machine definition with appropriate guards
+3. **Context updates**: Use `assign()` action to update game context immutably
+4. **CPU logic**: Implement as actions that run on state entry or delayed transitions
+5. **Validation**: Use guards to prevent invalid state transitions or actions

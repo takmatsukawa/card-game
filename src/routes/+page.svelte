@@ -1,154 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { useMachine } from '@xstate/svelte';
+	import { gameStateMachine, type Card } from '$lib/gameStateMachine.ts';
 
-	// カードの種類を定義
-	type CardType = 'monster' | 'magic';
+	// ゲーム状態マシンの使用
+	const { snapshot, send } = useMachine(gameStateMachine);
 
-	// モンスターカードのコマンド型
-	interface MonsterCommand {
-		manaCost: number;
-		damage: number;
-		description: string;
-	}
-
-	// モンスターカードの型
-	interface MonsterCard {
-		id: number;
-		type: 'monster';
-		name: string;
-		hp: number;
-		commands: MonsterCommand[];
-	}
-
-	// マジックカードの型
-	interface MagicCard {
-		id: number;
-		type: 'magic';
-		name: string;
-		manaCost: number;
-		description: string;
-	}
-
-	// カードの型（モンスターとマジックのユニオン型）
-	type Card = MonsterCard | MagicCard;
-
-	// 盤面の1マス
-	interface FieldCell {
-		card: MonsterCard | null;
-		isWaiting: boolean; // 召喚酔い状態
-	}
-
-	// 2x2の盤面
-	// [行][列] でアクセス（例: fieldGrid[0][1]）
-	type FieldGrid = FieldCell[][];
-
-	// プレイヤーの型
-	interface Player {
-		id: number;
-		name: string;
-		hp: number;
-		mana: number;
-		deck: Card[];
-		hand: Card[];
-		field: MonsterCard[];
-		fieldGrid: FieldGrid;
-	}
-
-	// ゲームの状態
-	let currentPlayer = $state(0);
-	let players = $state([
-		{
-			id: 1,
-			name: 'プレイヤー1',
-			hp: 20,
-			mana: 10,
-			deck: [],
-			hand: [],
-			field: [],
-			fieldGrid: createEmptyFieldGrid()
-		},
-		{
-			id: 2,
-			name: 'プレイヤー2',
-			hp: 20,
-			mana: 10,
-			deck: [],
-			hand: [],
-			field: [],
-			fieldGrid: createEmptyFieldGrid()
-		}
-	] as Player[]);
-
-	// 選択中のカードとマスの状態
-	let selectedCard = $state<Card | null>(null);
-	let selectedCell = $state<{ row: number; col: number } | null>(null);
-
-	// サンプルカードの作成
-	function createSampleCards(): Card[] {
-		return [
-			{
-				id: 1,
-				type: 'monster',
-				name: 'スライム',
-				hp: 5,
-				commands: [
-					{ manaCost: 1, damage: 2, description: '通常攻撃' },
-					{ manaCost: 2, damage: 4, description: '強力な攻撃' }
-				]
-			},
-			{
-				id: 2,
-				type: 'magic',
-				name: 'ファイアボール',
-				manaCost: 3,
-				description: '相手に3ダメージを与える'
-			},
-			{
-				id: 3,
-				type: 'monster',
-				name: 'ゴブリン',
-				hp: 3,
-				commands: [
-					{ manaCost: 1, damage: 1, description: '素早い攻撃' },
-					{ manaCost: 3, damage: 3, description: '連続攻撃' }
-				]
-			},
-			{
-				id: 4,
-				type: 'magic',
-				name: 'ヒール',
-				manaCost: 2,
-				description: '自分に2回復する'
-			}
-		];
-	}
-
-	// 空の2x2盤面を作成する関数
-	function createEmptyFieldGrid(): FieldGrid {
-		return [
-			[
-				{ card: null, isWaiting: false },
-				{ card: null, isWaiting: false }
-			],
-			[
-				{ card: null, isWaiting: false },
-				{ card: null, isWaiting: false }
-			]
-		];
-	}
-
-	onMount(() => {
-		// サンプルカードをデッキに追加
-		players = players.map((player) => {
-			const cards = createSampleCards();
-			return {
-				...player,
-				deck: cards,
-				hand: [...cards],
-				fieldGrid: createEmptyFieldGrid()
-			};
-		});
-	});
+	// 状態マシンから状態を取得
+	$: players = $snapshot.context.players;
+	$: currentPlayer = $snapshot.context.currentPlayer;
+	$: selectedCard = $snapshot.context.selectedCard;
+	$: selectedCell = $snapshot.context.selectedCell;
 
 	// カードの種類に応じた背景色を取得
 	function getCardBackgroundColor(card: Card): string {
@@ -157,202 +18,27 @@
 
 	// カードの選択状態をリセット
 	function resetSelection() {
-		selectedCard = null;
-		selectedCell = null;
+		send({ type: 'RESET_SELECTION' });
 	}
 
-	// CPUの行動を制御する関数
-	function cpuAction() {
-		const cpu = players[1];
-		const player = players[0];
-		
-		// 1. 場の状況分析
-		const emptyCells = findEmptyCells(cpu.fieldGrid);
-		const playableCards = cpu.hand.filter(card => 
-			card.type === 'monster' && cpu.mana >= 1
-		);
-		
-		// 2. カード配置ロジック
-		while (emptyCells.length > 0 && playableCards.length > 0 && cpu.mana >= 1) {
-			// 最も強いカードを選択
-			const bestCard = selectBestCard(playableCards);
-			// 最適な位置に配置
-			const bestPosition = findBestPosition(emptyCells);
-			placeCard(bestCard, bestPosition);
-			
-			// 空きマスとプレイ可能なカードを更新
-			emptyCells.splice(emptyCells.indexOf(bestPosition), 1);
-			playableCards.splice(playableCards.indexOf(bestCard), 1);
-		}
-		
-		// 3. 攻撃判断
-		if (canAttack()) {
-			const attackTargets = findAttackTargets();
-			executeBestAttack(attackTargets);
-		}
-	}
-
-	// 空いているマスを探す
-	function findEmptyCells(fieldGrid: FieldGrid): { row: number; col: number }[] {
-		const emptyCells: { row: number; col: number }[] = [];
-		for (let row = 0; row < fieldGrid.length; row++) {
-			for (let col = 0; col < fieldGrid[row].length; col++) {
-				if (!fieldGrid[row][col].card) {
-					emptyCells.push({ row, col });
-				}
-			}
-		}
-		return emptyCells;
-	}
-
-	// 最適なカードを選択
-	function selectBestCard(cards: Card[]): Card {
-		// モンスターカードのみを対象とする
-		const monsterCards = cards.filter(card => card.type === 'monster') as MonsterCard[];
-		
-		// HPと攻撃力の合計で評価
-		return monsterCards.reduce((best, current) => {
-			const currentValue = current.hp + current.commands.reduce((sum, cmd) => sum + cmd.damage, 0);
-			const bestValue = (best as MonsterCard).hp + (best as MonsterCard).commands.reduce((sum, cmd) => sum + cmd.damage, 0);
-			return currentValue > bestValue ? current : best;
-		});
-	}
-
-	// 最適な配置位置を選択
-	function findBestPosition(emptyCells: { row: number; col: number }[]): { row: number; col: number } {
-		// 現在は単純に最初の空きマスを選択
-		return emptyCells[0];
-	}
-
-	// カードを配置
-	function placeCard(card: Card, position: { row: number; col: number }) {
-		const cpu = players[1];
-		const cell = cpu.fieldGrid[position.row][position.col];
-		
-		if (!cell.card) {
-			cpu.mana -= 1;
-			cell.card = card as MonsterCard;
-			cell.isWaiting = true;
-			
-			// 手札からカードを削除
-			const cardId = card.id;
-			cpu.hand = cpu.hand.filter((c) => c.id !== cardId);
-		}
-	}
-
-	// 攻撃可能かどうかを判定
-	function canAttack(): boolean {
-		const cpu = players[1];
-		return cpu.fieldGrid.some(row => 
-			row.some(cell => cell.card && !cell.isWaiting)
-		);
-	}
-
-	// 攻撃対象を探す
-	function findAttackTargets(): { row: number; col: number }[] {
-		const player = players[0];
-		const targets: { row: number; col: number }[] = [];
-		
-		for (let row = 0; row < player.fieldGrid.length; row++) {
-			for (let col = 0; col < player.fieldGrid[row].length; col++) {
-				if (player.fieldGrid[row][col].card) {
-					targets.push({ row, col });
-				}
-			}
-		}
-		
-		return targets;
-	}
-
-	// 最適な攻撃を実行
-	function executeBestAttack(targets: { row: number; col: number }[]) {
-		const cpu = players[1];
-		const player = players[0];
-		
-		// 攻撃可能なモンスターを探す
-		const attackers: { row: number; col: number; card: MonsterCard }[] = [];
-		for (let row = 0; row < cpu.fieldGrid.length; row++) {
-			for (let col = 0; col < cpu.fieldGrid[row].length; col++) {
-				const cell = cpu.fieldGrid[row][col];
-				if (cell.card && !cell.isWaiting) {
-					attackers.push({ row, col, card: cell.card });
-				}
-			}
-		}
-		
-		// 各攻撃者について最適な攻撃を実行
-		attackers.forEach(attacker => {
-			if (targets.length > 0) {
-				// 最も弱いモンスターを攻撃
-				const target = targets.reduce((weakest, current) => {
-					const currentHP = player.fieldGrid[current.row][current.col].card?.hp || 0;
-					const weakestHP = player.fieldGrid[weakest.row][weakest.col].card?.hp || 0;
-					return currentHP < weakestHP ? current : weakest;
-				});
-				
-				// 攻撃を実行
-				const targetCard = player.fieldGrid[target.row][target.col].card;
-				if (targetCard) {
-					// 最も強い攻撃コマンドを使用
-					const bestCommand = attacker.card.commands.reduce((best, current) => 
-						current.damage > best.damage ? current : best
-					);
-					
-					targetCard.hp -= bestCommand.damage;
-					
-					// HPが0以下になったらカードを削除
-					if (targetCard.hp <= 0) {
-						player.fieldGrid[target.row][target.col].card = null;
-					}
-				}
-			}
-		});
-	}
-
-	// ターンエンド処理を更新
+	// ターンエンド処理
 	function endTurn() {
-		// 次のプレイヤーのインデックスを計算
-		currentPlayer = (currentPlayer + 1) % 2;
-
-		// 相手プレイヤーのターンの場合、CPUの行動を実行
-		if (currentPlayer === 1) {
-			setTimeout(() => {
-				cpuAction();
-				// CPUの行動後に自動的にターンエンド
-				setTimeout(() => {
-					endTurn();
-				}, 1000);
-			}, 1000);
-		}
+		send({ type: 'END_TURN' });
 	}
 
 	// カードを選択する関数
 	function selectCard(card: Card) {
 		if (card.type === 'monster' && players[currentPlayer].mana >= 1) {
-			selectedCard = card;
+			send({ type: 'SELECT_CARD', card });
 		}
 	}
 
 	// マスを選択する関数
 	function selectCell(row: number, col: number) {
 		if (selectedCard && selectedCard.type === 'monster') {
-			const currentPlayerObj = players[currentPlayer];
-			const cell = currentPlayerObj.fieldGrid[row][col];
-
-			if (!cell.card) {
-				// マナを消費してモンスターを配置
-				currentPlayerObj.mana -= 1;
-				cell.card = selectedCard as MonsterCard;
-				cell.isWaiting = true;
-
-				// 手札からカードを削除
-				const cardId = selectedCard.id;
-				currentPlayerObj.hand = currentPlayerObj.hand.filter((c) => c.id !== cardId);
-
-				// 選択状態をリセット
-				selectedCard = null;
-				selectedCell = null;
-			}
+			send({ type: 'PLACE_CARD', card: selectedCard, row, col });
+		} else {
+			send({ type: 'SELECT_CELL', row, col });
 		}
 	}
 </script>
