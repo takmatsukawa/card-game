@@ -1,4 +1,4 @@
-import { createActor, setup, assign } from 'xstate';
+import { assign, createActor, setup } from 'xstate';
 
 // カードの型定義（既存の型と同様）
 export interface MonsterCommand {
@@ -205,19 +205,47 @@ export const gameStateMachine = setup({
 			selectedCard: null,
 			selectedCell: null
 		}),
+		switchTurnAndUpdateWaiting: assign({
+			currentPlayer: ({ context }) => (context.currentPlayer + 1) % 2,
+			players: ({ context }) => {
+				const newCurrentPlayer = (context.currentPlayer + 1) % 2;
+
+				return context.players.map((player, index) => {
+					if (index === newCurrentPlayer) {
+						return {
+							...player,
+							fieldGrid: player.fieldGrid.map((row) =>
+								row.map((cell) => ({
+									...cell,
+									isWaiting: cell.card ? false : cell.isWaiting
+								}))
+							)
+						};
+					}
+
+					return player;
+				});
+			},
+			selectedCard: null,
+			selectedCell: null
+		}),
 		updateWaitingStatus: assign({
 			players: ({ context }) => {
-				const newPlayers = [...context.players];
-				// 現在のプレイヤーのモンスターの待機状態のみを解除
-				const currentPlayerObj = newPlayers[context.currentPlayer];
-				currentPlayerObj.fieldGrid.forEach(row => {
-					row.forEach(cell => {
-						if (cell.card) {
-							cell.isWaiting = false;
-						}
-					});
+				return context.players.map((player, index) => {
+					if (index === context.currentPlayer) {
+						return {
+							...player,
+							fieldGrid: player.fieldGrid.map(row => 
+								row.map(cell => ({
+									...cell,
+									isWaiting: cell.card ? false : cell.isWaiting
+								}))
+							)
+						};
+					}
+
+					return player;
 				});
-				return newPlayers;
 			}
 		}),
 		cpuAction: assign({
@@ -275,7 +303,6 @@ export const gameStateMachine = setup({
 	context: createInitialContext(),
 	states: {
 		playerTurn: {
-			entry: 'updateWaitingStatus',
 			on: {
 				SELECT_CARD: {
 					actions: 'selectCard'
@@ -292,16 +319,16 @@ export const gameStateMachine = setup({
 				},
 				END_TURN: {
 					target: 'cpuTurn',
-					actions: 'switchTurn'
+					actions: 'switchTurnAndUpdateWaiting'
 				}
 			}
 		},
 		cpuTurn: {
-			entry: ['updateWaitingStatus', 'cpuAction'],
+			entry: 'cpuAction',
 			after: {
 				2000: {
 					target: 'playerTurn',
-					actions: 'switchTurn'
+					actions: 'switchTurnAndUpdateWaiting'
 				}
 			}
 		},

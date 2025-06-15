@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createActor } from 'xstate';
-import { gameStateMachine, createGameActor, type GameContext, type Card, type MonsterCard } from './gameStateMachine.ts';
+import { createGameActor, type GameContext, type Card, type MonsterCard } from './gameStateMachine.ts';
 
 describe('ゲーム状態機械', () => {
 	let actor: ReturnType<typeof createGameActor>;
@@ -206,6 +205,95 @@ describe('ゲーム状態機械', () => {
 			
 			expect(actor.getSnapshot().matches('playerTurn')).toBe(true);
 			expect(actor.getSnapshot().context.currentPlayer).toBe(0);
+		});
+	});
+
+	describe('待機状態管理', () => {
+		it('配置したモンスターは待機状態で始まる', () => {
+			const testActor = createGameActor();
+			testActor.start();
+			
+			const context = testActor.getSnapshot().context;
+			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+
+			testActor.send({ 
+				type: 'PLACE_CARD', 
+				card: monsterCard, 
+				row: 0, 
+				col: 0 
+			});
+
+			const newContext = testActor.getSnapshot().context;
+			expect(newContext.players[0].fieldGrid[0][0].isWaiting).toBe(true);
+		});
+
+		it('モンスターの待機状態は自分のターン開始時に解除される', async () => {
+			const testActor = createGameActor();
+			testActor.start();
+			
+			// プレイヤー1がモンスターを配置
+			const context = testActor.getSnapshot().context;
+			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+			testActor.send({ 
+				type: 'PLACE_CARD', 
+				card: monsterCard, 
+				row: 0, 
+				col: 0 
+			});
+
+			// モンスターが待機状態であることを確認
+			let currentContext = testActor.getSnapshot().context;
+			expect(currentContext.players[0].fieldGrid[0][0].isWaiting).toBe(true);
+
+			// プレイヤー1のターンを終了
+			testActor.send({ type: 'END_TURN' });
+			expect(testActor.getSnapshot().matches('cpuTurn')).toBe(true);
+			
+			// この時点で、CPUターンに切り替わった時にプレイヤー1のモンスターはまだ待機状態
+			currentContext = testActor.getSnapshot().context;
+			expect(currentContext.players[0].fieldGrid[0][0].isWaiting).toBe(true);
+
+			// CPUターンが終了してプレイヤー1のターンが戻ってくるまで待つ
+			await new Promise(resolve => setTimeout(resolve, 2100));
+			
+			// プレイヤー1のターンが戻ってきたときに待機状態が解除されることを確認
+			currentContext = testActor.getSnapshot().context;
+			expect(testActor.getSnapshot().matches('playerTurn')).toBe(true);
+			expect(currentContext.currentPlayer).toBe(0);
+			expect(currentContext.players[0].fieldGrid[0][0].isWaiting).toBe(false);
+		});
+
+		it('相手プレイヤーのモンスターの待機状態は自分のターン開始時に影響されない', async () => {
+			const testActor = createGameActor();
+			testActor.start();
+			
+			// プレイヤー1がモンスターを配置
+			const context = testActor.getSnapshot().context;
+			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+			testActor.send({ 
+				type: 'PLACE_CARD', 
+				card: monsterCard, 
+				row: 0, 
+				col: 0 
+			});
+
+			// CPUターンに切り替え
+			testActor.send({ type: 'END_TURN' });
+			
+			// CPUターン中に手動でCPUのモンスターを配置（テスト用）
+			let currentContext = testActor.getSnapshot().context;
+			const cpuMonster = currentContext.players[1].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+			currentContext.players[1].fieldGrid[0][1].card = cpuMonster;
+			currentContext.players[1].fieldGrid[0][1].isWaiting = true;
+
+			// プレイヤー1のターンが戻ってくるまで待つ
+			await new Promise(resolve => setTimeout(resolve, 2100));
+			
+			currentContext = testActor.getSnapshot().context;
+			// プレイヤー1のモンスターの待機状態は解除されている
+			expect(currentContext.players[0].fieldGrid[0][0].isWaiting).toBe(false);
+			// CPUのモンスターの待機状態は影響されない
+			expect(currentContext.players[1].fieldGrid[0][1].isWaiting).toBe(true);
 		});
 	});
 
