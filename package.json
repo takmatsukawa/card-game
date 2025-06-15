@@ -1,5 +1,5 @@
 {
-	"name": "logistics-center-svelte",
+	"name": "card-game",
 	"version": "0.0.1",
 	"scripts": {
 		"dev": "vite dev",
