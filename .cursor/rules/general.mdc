@@ -3,6 +3,12 @@ description:
 globs: 
 alwaysApply: true
 ---
-# ファイル編集後のルール
+## Code Formatting
 
-ファイルを編集したら、最後に必ず `npm run format` を実行すること。
+Run npm run format after updating any source files
+**/*.{ts,js,svelte,css,scss,json} -> npm run format
+
+## TypeScript Configuration Check
+
+Verify tsconfig.json settings on every change
+tsconfig.json -> tsc --noEmit
