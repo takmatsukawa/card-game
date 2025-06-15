@@ -173,12 +173,16 @@
 		);
 		
 		// 2. カード配置ロジック
-		if (emptyCells.length > 0 && playableCards.length > 0) {
+		while (emptyCells.length > 0 && playableCards.length > 0 && cpu.mana >= 1) {
 			// 最も強いカードを選択
 			const bestCard = selectBestCard(playableCards);
 			// 最適な位置に配置
 			const bestPosition = findBestPosition(emptyCells);
 			placeCard(bestCard, bestPosition);
+			
+			// 空きマスとプレイ可能なカードを更新
+			emptyCells.splice(emptyCells.indexOf(bestPosition), 1);
+			playableCards.splice(playableCards.indexOf(bestCard), 1);
 		}
 		
 		// 3. 攻撃判断
