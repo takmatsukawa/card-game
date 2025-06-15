@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { useMachine } from '@xstate/svelte';
 	import { gameStateMachine, type Card } from '$lib/gameStateMachine.ts';
+	import PlayerImage from '$lib/PlayerImage.svelte';
 
 	// ゲーム状態マシンの使用
 	const { snapshot, send } = useMachine(gameStateMachine);
@@ -106,19 +107,13 @@
 				{/each}
 			</div>
 			<!-- プレイヤーイメージ（相手） -->
-			<svg width="40" height="50" viewBox="0 0 40 50">
-				<circle cx="20" cy="15" r="10" fill="#bbb" />
-				<rect x="10" y="25" width="20" height="20" rx="8" fill="#bbb" />
-			</svg>
+			<PlayerImage isOpponent={true} />
 		</div>
 
 		<!-- 自分プレイヤー側 -->
 		<div class="mt-8 flex flex-col items-center">
 			<!-- プレイヤーイメージ（自分） -->
-			<svg width="40" height="50" viewBox="0 0 40 50">
-				<circle cx="20" cy="15" r="10" fill="#4b9cff" />
-				<rect x="10" y="25" width="20" height="20" rx="8" fill="#4b9cff" />
-			</svg>
+			<PlayerImage isOpponent={false} />
 			<!-- 2x2マス -->
 			<div class="mt-2 grid grid-cols-2 gap-4">
 				{#each players[0].fieldGrid as row, rowIndex}
