@@ -1,6 +1,6 @@
 import { assign, createActor, setup } from 'xstate';
 
-// カードの型定義（既存の型と同様）
+// カードの型定義
 export interface MonsterCommand {
 	stoneCost: number;
 	damage: number;
@@ -173,6 +173,81 @@ export const gameStateMachine = setup({
 				return null;
 			}
 		}),
+		selectCardAndPlaceIfCellSelected: assign(({ context, event }) => {
+			if (event.type === 'SELECT_CARD' && context.selectedCell) {
+				const currentPlayerObj = context.players[context.currentPlayer];
+				const { row, col } = context.selectedCell;
+				const cell = currentPlayerObj.fieldGrid[row][col];
+
+				// カード配置が可能な場合
+				if (!cell.card && event.card.type === 'monster' && currentPlayerObj.stone >= 1) {
+					const newPlayers = [...context.players];
+					const newCurrentPlayerObj = newPlayers[context.currentPlayer];
+					const newCell = newCurrentPlayerObj.fieldGrid[row][col];
+
+					// ストーンを消費してモンスターを配置
+					newCurrentPlayerObj.stone -= 1;
+					newCell.card = event.card as MonsterCard;
+					newCell.isWaiting = true;
+
+					// 手札からカードを削除
+					newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter((c) => c.id !== event.card.id);
+
+					// 配置成功時は両方の選択状態をクリア
+					return {
+						players: newPlayers,
+						selectedCard: null,
+						selectedCell: null
+					};
+				}
+			}
+
+			// カード配置しない場合は通常のカード選択
+			if (event.type === 'SELECT_CARD') {
+				return {
+					selectedCard: event.card
+				};
+			}
+
+			return {};
+		}),
+		selectCellAndPlaceIfCardSelected: assign(({ context, event }) => {
+			if (event.type === 'SELECT_CELL' && context.selectedCard) {
+				const currentPlayerObj = context.players[context.currentPlayer];
+				const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+
+				// カード配置が可能な場合
+				if (!cell.card && context.selectedCard.type === 'monster' && currentPlayerObj.stone >= 1) {
+					const newPlayers = [...context.players];
+					const newCurrentPlayerObj = newPlayers[context.currentPlayer];
+					const newCell = newCurrentPlayerObj.fieldGrid[event.row][event.col];
+
+					// ストーンを消費してモンスターを配置
+					newCurrentPlayerObj.stone -= 1;
+					newCell.card = context.selectedCard as MonsterCard;
+					newCell.isWaiting = true;
+
+					// 手札からカードを削除
+					newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter((c) => c.id !== context.selectedCard!.id);
+
+					// 配置成功時は両方の選択状態をクリア
+					return {
+						players: newPlayers,
+						selectedCard: null,
+						selectedCell: null
+					};
+				}
+			}
+
+			// カード配置しない場合は通常のセル選択
+			if (event.type === 'SELECT_CELL') {
+				return {
+					selectedCell: { row: event.row, col: event.col }
+				};
+			}
+
+			return {};
+		}),
 		resetSelection: assign({
 			selectedCard: null,
 			selectedCell: null
@@ -300,10 +375,10 @@ export const gameStateMachine = setup({
 		playerTurn: {
 			on: {
 				SELECT_CARD: {
-					actions: 'selectCard'
+					actions: 'selectCardAndPlaceIfCellSelected'
 				},
 				SELECT_CELL: {
-					actions: 'selectCell'
+					actions: 'selectCellAndPlaceIfCardSelected'
 				},
 				PLACE_CARD: {
 					guard: 'canPlaceCard',

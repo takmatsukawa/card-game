@@ -36,11 +36,7 @@
 
 	// マスを選択する関数
 	function selectCell(row: number, col: number) {
-		if (selectedCard && selectedCard.type === 'monster') {
-			send({ type: 'PLACE_CARD', card: selectedCard, row, col });
-		} else {
-			send({ type: 'SELECT_CELL', row, col });
-		}
+		send({ type: 'SELECT_CELL', row, col });
 	}
 </script>
 
@@ -184,11 +180,16 @@
 	</div>
 </div>
 
-<!-- 選択中のカードの情報表示 -->
-{#if selectedCard}
+<!-- 選択中の状態表示 -->
+{#if selectedCard || selectedCell}
 	<div class="fixed right-4 bottom-4 rounded-lg bg-white p-4 shadow-lg">
-		<p class="font-bold">選択中のカード: {selectedCard?.name}</p>
-		<p class="text-sm">マスを選択して配置してください</p>
+		{#if selectedCard}
+			<p class="font-bold">選択中のカード: {selectedCard.name}</p>
+			<p class="text-sm">マスを選択して配置してください</p>
+		{:else if selectedCell}
+			<p class="font-bold">選択中のマス: 行{selectedCell.row + 1} 列{selectedCell.col + 1}</p>
+			<p class="text-sm">カードを選択して配置してください</p>
+		{/if}
 		<button
 			class="mt-2 rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
 			onclick={resetSelection}
