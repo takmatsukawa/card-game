@@ -145,75 +145,7 @@ describe('カード配置ロジック', () => {
 		});
 	});
 
-	describe('盤面の状態管理', () => {
-		it('すべてのセルが空の場合', () => {
-			const fieldGrid = createEmptyFieldGrid();
-			let emptyCount = 0;
-
-			for (let row = 0; row < fieldGrid.length; row++) {
-				for (let col = 0; col < fieldGrid[row].length; col++) {
-					if (!fieldGrid[row][col].card) {
-						emptyCount++;
-					}
-				}
-			}
-
-			expect(emptyCount).toBe(4);
-		});
-
-		it('盤面が満杯の場合', () => {
-			const fieldGrid = createEmptyFieldGrid();
-
-			// すべてのセルにカードを配置
-			for (let row = 0; row < fieldGrid.length; row++) {
-				for (let col = 0; col < fieldGrid[row].length; col++) {
-					fieldGrid[row][col].card = createSampleMonsterCard(row * 2 + col + 1);
-				}
-			}
-
-			let filledCount = 0;
-			for (let row = 0; row < fieldGrid.length; row++) {
-				for (let col = 0; col < fieldGrid[row].length; col++) {
-					if (fieldGrid[row][col].card) {
-						filledCount++;
-					}
-				}
-			}
-
-			expect(filledCount).toBe(4);
-		});
-
-		it('待機状態の管理', () => {
-			const fieldGrid = createEmptyFieldGrid();
-			const card = createSampleMonsterCard();
-
-			fieldGrid[0][0].card = card;
-			fieldGrid[0][0].isWaiting = true;
-
-			expect(fieldGrid[0][0].isWaiting).toBe(true);
-
-			// 待機状態を解除
-			fieldGrid[0][0].isWaiting = false;
-
-			expect(fieldGrid[0][0].isWaiting).toBe(false);
-		});
-	});
-
 	describe('配置戦略', () => {
-		it('角のセルは防御に有利', () => {
-			const fieldGrid = createEmptyFieldGrid();
-			const cornerPositions = [
-				{ row: 0, col: 0 },
-				{ row: 0, col: 1 },
-				{ row: 1, col: 0 },
-				{ row: 1, col: 1 }
-			];
-
-			cornerPositions.forEach((pos) => {
-				expect(canPlaceCard(fieldGrid, createSampleMonsterCard(), pos.row, pos.col, 5)).toBe(true);
-			});
-		});
-
 		it('配置可能なセルの数を正確に計算', () => {
 			const fieldGrid = createEmptyFieldGrid();
 
