@@ -3,9 +3,9 @@ import type { MonsterCard, MonsterCommand, Player, FieldGrid } from './gameState
 
 // 戦闘システムのヘルパー関数をテスト用に抽出
 function createMonsterCard(
-	id: number, 
-	name: string, 
-	hp: number, 
+	id: number,
+	name: string,
+	hp: number,
 	commands: MonsterCommand[]
 ): MonsterCard {
 	return {
@@ -30,7 +30,9 @@ function createEmptyFieldGrid(): FieldGrid {
 	];
 }
 
-function findAttackableMonsters(fieldGrid: FieldGrid): { row: number; col: number; card: MonsterCard }[] {
+function findAttackableMonsters(
+	fieldGrid: FieldGrid
+): { row: number; col: number; card: MonsterCard }[] {
 	const attackers: { row: number; col: number; card: MonsterCard }[] = [];
 	for (let row = 0; row < fieldGrid.length; row++) {
 		for (let col = 0; col < fieldGrid[row].length; col++) {
@@ -56,14 +58,14 @@ function findTargets(fieldGrid: FieldGrid): { row: number; col: number }[] {
 }
 
 function executeAttack(
-	attacker: MonsterCard, 
-	target: MonsterCard, 
+	attacker: MonsterCard,
+	target: MonsterCard,
 	commandIndex: number = 0
 ): { damage: number; targetDestroyed: boolean; newTargetHp: number } {
 	const command = attacker.commands[commandIndex];
 	const damage = command.damage;
 	const newHp = target.hp - damage;
-	
+
 	return {
 		damage,
 		targetDestroyed: newHp <= 0,
@@ -72,12 +74,15 @@ function executeAttack(
 }
 
 function selectBestCommand(monster: MonsterCard): MonsterCommand {
-	return monster.commands.reduce((best, current) => 
+	return monster.commands.reduce((best, current) =>
 		current.damage > best.damage ? current : best
 	);
 }
 
-function selectWeakestTarget(targets: { row: number; col: number }[], fieldGrid: FieldGrid): { row: number; col: number } {
+function selectWeakestTarget(
+	targets: { row: number; col: number }[],
+	fieldGrid: FieldGrid
+): { row: number; col: number } {
 	return targets.reduce((weakest, current) => {
 		const currentHP = fieldGrid[current.row][current.col].card?.hp || 0;
 		const weakestHP = fieldGrid[weakest.row][weakest.col].card?.hp || 0;
@@ -252,22 +257,18 @@ describe('戦闘システム', () => {
 				createMonsterCard(1, 'バランス型', 5, [
 					{ manaCost: 1, damage: 2, description: '通常攻撃' }
 				]),
-				createMonsterCard(2, '攻撃型', 3, [
-					{ manaCost: 1, damage: 4, description: '強攻撃' }
-				]),
-				createMonsterCard(3, '防御型', 8, [
-					{ manaCost: 1, damage: 1, description: '弱攻撃' }
-				])
+				createMonsterCard(2, '攻撃型', 3, [{ manaCost: 1, damage: 4, description: '強攻撃' }]),
+				createMonsterCard(3, '防御型', 8, [{ manaCost: 1, damage: 1, description: '弱攻撃' }])
 			];
 
 			// 各モンスターの戦闘力を計算（HP + 最大ダメージ）
-			const combatPowers = monsters.map(monster => {
-				const maxDamage = Math.max(...monster.commands.map(cmd => cmd.damage));
+			const combatPowers = monsters.map((monster) => {
+				const maxDamage = Math.max(...monster.commands.map((cmd) => cmd.damage));
 				return monster.hp + maxDamage;
 			});
 
 			expect(combatPowers[0]).toBe(7); // バランス型: 5 + 2
-			expect(combatPowers[1]).toBe(7); // 攻撃型: 3 + 4  
+			expect(combatPowers[1]).toBe(7); // 攻撃型: 3 + 4
 			expect(combatPowers[2]).toBe(9); // 防御型: 8 + 1
 		});
 
@@ -279,10 +280,10 @@ describe('戦闘システム', () => {
 			]);
 
 			// 効率性の計算（ダメージ/マナコスト）
-			const efficiencies = monster.commands.map(cmd => cmd.damage / cmd.manaCost);
+			const efficiencies = monster.commands.map((cmd) => cmd.damage / cmd.manaCost);
 
-			expect(efficiencies[0]).toBe(2.0);   // 2/1
-			expect(efficiencies[1]).toBe(1.5);   // 3/2
+			expect(efficiencies[0]).toBe(2.0); // 2/1
+			expect(efficiencies[1]).toBe(1.5); // 3/2
 			expect(efficiencies[2]).toBeCloseTo(1.67, 2); // 5/3
 		});
 	});

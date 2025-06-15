@@ -235,8 +235,8 @@ export const gameStateMachine = setup({
 					if (index === context.currentPlayer) {
 						return {
 							...player,
-							fieldGrid: player.fieldGrid.map(row => 
-								row.map(cell => ({
+							fieldGrid: player.fieldGrid.map((row) =>
+								row.map((cell) => ({
 									...cell,
 									isWaiting: cell.card ? false : cell.isWaiting
 								}))
@@ -256,15 +256,13 @@ export const gameStateMachine = setup({
 
 				// CPUの行動ロジック
 				const emptyCells = findEmptyCells(cpu.fieldGrid);
-				const playableCards = cpu.hand.filter(card => 
-					card.type === 'monster' && cpu.mana >= 1
-				);
+				const playableCards = cpu.hand.filter((card) => card.type === 'monster' && cpu.mana >= 1);
 
 				// カード配置
 				while (emptyCells.length > 0 && playableCards.length > 0 && cpu.mana >= 1) {
 					const bestCard = selectBestCard(playableCards);
 					const bestPosition = findBestPosition(emptyCells);
-					
+
 					// カードを配置
 					const cell = cpu.fieldGrid[bestPosition.row][bestPosition.col];
 					if (!cell.card) {
@@ -349,16 +347,21 @@ function findEmptyCells(fieldGrid: FieldGrid): { row: number; col: number }[] {
 }
 
 function selectBestCard(cards: Card[]): Card {
-	const monsterCards = cards.filter(card => card.type === 'monster') as MonsterCard[];
-	
+	const monsterCards = cards.filter((card) => card.type === 'monster') as MonsterCard[];
+
 	return monsterCards.reduce((best, current) => {
 		const currentValue = current.hp + current.commands.reduce((sum, cmd) => sum + cmd.damage, 0);
-		const bestValue = (best as MonsterCard).hp + (best as MonsterCard).commands.reduce((sum, cmd) => sum + cmd.damage, 0);
+		const bestValue =
+			(best as MonsterCard).hp +
+			(best as MonsterCard).commands.reduce((sum, cmd) => sum + cmd.damage, 0);
 		return currentValue > bestValue ? current : best;
 	});
 }
 
-function findBestPosition(emptyCells: { row: number; col: number }[]): { row: number; col: number } {
+function findBestPosition(emptyCells: { row: number; col: number }[]): {
+	row: number;
+	col: number;
+} {
 	return emptyCells[0];
 }
 

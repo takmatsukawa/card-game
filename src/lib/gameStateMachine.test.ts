@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { createGameActor, type GameContext, type Card, type MonsterCard } from './gameStateMachine.ts';
+import {
+	createGameActor,
+	type GameContext,
+	type Card,
+	type MonsterCard
+} from './gameStateMachine.ts';
 
 describe('ゲーム状態機械', () => {
 	let actor: ReturnType<typeof createGameActor>;
@@ -54,7 +59,7 @@ describe('ゲーム状態機械', () => {
 		it('SELECT_CARDイベントでカードが選択される', () => {
 			const card = actor.getSnapshot().context.players[0].hand[0];
 			actor.send({ type: 'SELECT_CARD', card });
-			
+
 			const context = actor.getSnapshot().context;
 			expect(context.selectedCard).toBe(card);
 		});
@@ -63,7 +68,7 @@ describe('ゲーム状態機械', () => {
 			const card = actor.getSnapshot().context.players[0].hand[0];
 			actor.send({ type: 'SELECT_CARD', card });
 			actor.send({ type: 'RESET_SELECTION' });
-			
+
 			const context = actor.getSnapshot().context;
 			expect(context.selectedCard).toBeNull();
 			expect(context.selectedCell).toBeNull();
@@ -73,7 +78,7 @@ describe('ゲーム状態機械', () => {
 	describe('セル選択', () => {
 		it('SELECT_CELLイベントでセルが選択される', () => {
 			actor.send({ type: 'SELECT_CELL', row: 0, col: 1 });
-			
+
 			const context = actor.getSnapshot().context;
 			expect(context.selectedCell).toEqual({ row: 0, col: 1 });
 		});
@@ -82,19 +87,21 @@ describe('ゲーム状態機械', () => {
 	describe('カード配置', () => {
 		it('モンスターカードを空のセルに配置できる', () => {
 			const context = actor.getSnapshot().context;
-			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+			const monsterCard = context.players[0].hand.find(
+				(card: Card) => card.type === 'monster'
+			) as MonsterCard;
 			const initialMana = context.players[0].mana;
 
-			actor.send({ 
-				type: 'PLACE_CARD', 
-				card: monsterCard, 
-				row: 0, 
-				col: 0 
+			actor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard,
+				row: 0,
+				col: 0
 			});
 
 			const newContext = actor.getSnapshot().context;
 			const placedCard = newContext.players[0].fieldGrid[0][0].card;
-			
+
 			expect(placedCard).toBe(monsterCard);
 			expect(newContext.players[0].fieldGrid[0][0].isWaiting).toBe(true);
 			expect(newContext.players[0].mana).toBe(initialMana - 1);
@@ -103,20 +110,22 @@ describe('ゲーム状態機械', () => {
 
 		it('マジックカードは配置できない（ガード条件により無視される）', () => {
 			const context = actor.getSnapshot().context;
-			const magicCard = context.players[0].hand.find(card => card.type === 'magic')!;
+			const magicCard = context.players[0].hand.find((card) => card.type === 'magic')!;
 			const initialMana = context.players[0].mana;
 			const initialFieldState = JSON.parse(JSON.stringify(context.players[0].fieldGrid));
 
-			actor.send({ 
-				type: 'PLACE_CARD', 
-				card: magicCard, 
-				row: 0, 
-				col: 0 
+			actor.send({
+				type: 'PLACE_CARD',
+				card: magicCard,
+				row: 0,
+				col: 0
 			});
 
 			const newContext = actor.getSnapshot().context;
 			// ガード条件によりアクションが実行されないため、状態は変わらない
-			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(JSON.stringify(initialFieldState));
+			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(
+				JSON.stringify(initialFieldState)
+			);
 			expect(newContext.players[0].mana).toBe(initialMana);
 			expect(newContext.players[0].hand).toContain(magicCard);
 		});
@@ -125,18 +134,20 @@ describe('ゲーム状態機械', () => {
 			// 新しいアクターで独立したテストを実行
 			const testActor = createGameActor();
 			testActor.start();
-			
+
 			const context = testActor.getSnapshot().context;
-			const monsterCards = context.players[0].hand.filter((card: Card) => card.type === 'monster') as MonsterCard[];
+			const monsterCards = context.players[0].hand.filter(
+				(card: Card) => card.type === 'monster'
+			) as MonsterCard[];
 			const monsterCard1 = monsterCards[0];
 			const monsterCard2 = monsterCards[1];
 
 			// 最初のカードを配置
-			testActor.send({ 
-				type: 'PLACE_CARD', 
-				card: monsterCard1, 
-				row: 0, 
-				col: 0 
+			testActor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard1,
+				row: 0,
+				col: 0
 			});
 
 			const initialContext = testActor.getSnapshot().context;
@@ -144,11 +155,11 @@ describe('ゲーム状態機械', () => {
 			const placedCard = initialContext.players[0].fieldGrid[0][0].card;
 
 			// 同じセルに2枚目のカードを配置しようとする
-			testActor.send({ 
-				type: 'PLACE_CARD', 
-				card: monsterCard2, 
-				row: 0, 
-				col: 0 
+			testActor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard2,
+				row: 0,
+				col: 0
 			});
 
 			const newContext = testActor.getSnapshot().context;
@@ -163,24 +174,28 @@ describe('ゲーム状態機械', () => {
 			// 新しいアクターを作成してマナを直接設定
 			const testActor = createGameActor();
 			testActor.start();
-			
+
 			// アクターのコンテキストを取得し、マナを0に設定
 			const initialContext = testActor.getSnapshot().context;
 			initialContext.players[0].mana = 0;
-			
-			const monsterCard = initialContext.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+
+			const monsterCard = initialContext.players[0].hand.find(
+				(card: Card) => card.type === 'monster'
+			) as MonsterCard;
 			const initialFieldState = JSON.parse(JSON.stringify(initialContext.players[0].fieldGrid));
 
-			testActor.send({ 
-				type: 'PLACE_CARD', 
-				card: monsterCard, 
-				row: 0, 
-				col: 0 
+			testActor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard,
+				row: 0,
+				col: 0
 			});
 
 			const newContext = testActor.getSnapshot().context;
 			// ガード条件により無視されるため、状態は変わらない
-			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(JSON.stringify(initialFieldState));
+			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(
+				JSON.stringify(initialFieldState)
+			);
 			expect(newContext.players[0].mana).toBe(0);
 			expect(newContext.players[0].hand).toContain(monsterCard);
 		});
@@ -189,9 +204,9 @@ describe('ゲーム状態機械', () => {
 	describe('ターン管理', () => {
 		it('END_TURNイベントでCPUターンに切り替わる', () => {
 			expect(actor.getSnapshot().matches('playerTurn')).toBe(true);
-			
+
 			actor.send({ type: 'END_TURN' });
-			
+
 			expect(actor.getSnapshot().matches('cpuTurn')).toBe(true);
 			expect(actor.getSnapshot().context.currentPlayer).toBe(1);
 		});
@@ -201,8 +216,8 @@ describe('ゲーム状態機械', () => {
 			expect(actor.getSnapshot().matches('cpuTurn')).toBe(true);
 
 			// CPUターンの自動切り替えを待つ
-			await new Promise(resolve => setTimeout(resolve, 2100));
-			
+			await new Promise((resolve) => setTimeout(resolve, 2100));
+
 			expect(actor.getSnapshot().matches('playerTurn')).toBe(true);
 			expect(actor.getSnapshot().context.currentPlayer).toBe(0);
 		});
@@ -212,15 +227,17 @@ describe('ゲーム状態機械', () => {
 		it('配置したモンスターは待機状態で始まる', () => {
 			const testActor = createGameActor();
 			testActor.start();
-			
-			const context = testActor.getSnapshot().context;
-			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
 
-			testActor.send({ 
-				type: 'PLACE_CARD', 
-				card: monsterCard, 
-				row: 0, 
-				col: 0 
+			const context = testActor.getSnapshot().context;
+			const monsterCard = context.players[0].hand.find(
+				(card: Card) => card.type === 'monster'
+			) as MonsterCard;
+
+			testActor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard,
+				row: 0,
+				col: 0
 			});
 
 			const newContext = testActor.getSnapshot().context;
@@ -230,15 +247,17 @@ describe('ゲーム状態機械', () => {
 		it('モンスターの待機状態は自分のターン開始時に解除される', async () => {
 			const testActor = createGameActor();
 			testActor.start();
-			
+
 			// プレイヤー1がモンスターを配置
 			const context = testActor.getSnapshot().context;
-			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
-			testActor.send({ 
-				type: 'PLACE_CARD', 
-				card: monsterCard, 
-				row: 0, 
-				col: 0 
+			const monsterCard = context.players[0].hand.find(
+				(card: Card) => card.type === 'monster'
+			) as MonsterCard;
+			testActor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard,
+				row: 0,
+				col: 0
 			});
 
 			// モンスターが待機状態であることを確認
@@ -248,14 +267,14 @@ describe('ゲーム状態機械', () => {
 			// プレイヤー1のターンを終了
 			testActor.send({ type: 'END_TURN' });
 			expect(testActor.getSnapshot().matches('cpuTurn')).toBe(true);
-			
+
 			// この時点で、CPUターンに切り替わった時にプレイヤー1のモンスターはまだ待機状態
 			currentContext = testActor.getSnapshot().context;
 			expect(currentContext.players[0].fieldGrid[0][0].isWaiting).toBe(true);
 
 			// CPUターンが終了してプレイヤー1のターンが戻ってくるまで待つ
-			await new Promise(resolve => setTimeout(resolve, 2100));
-			
+			await new Promise((resolve) => setTimeout(resolve, 2100));
+
 			// プレイヤー1のターンが戻ってきたときに待機状態が解除されることを確認
 			currentContext = testActor.getSnapshot().context;
 			expect(testActor.getSnapshot().matches('playerTurn')).toBe(true);
@@ -266,29 +285,33 @@ describe('ゲーム状態機械', () => {
 		it('相手プレイヤーのモンスターの待機状態は自分のターン開始時に影響されない', async () => {
 			const testActor = createGameActor();
 			testActor.start();
-			
+
 			// プレイヤー1がモンスターを配置
 			const context = testActor.getSnapshot().context;
-			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
-			testActor.send({ 
-				type: 'PLACE_CARD', 
-				card: monsterCard, 
-				row: 0, 
-				col: 0 
+			const monsterCard = context.players[0].hand.find(
+				(card: Card) => card.type === 'monster'
+			) as MonsterCard;
+			testActor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard,
+				row: 0,
+				col: 0
 			});
 
 			// CPUターンに切り替え
 			testActor.send({ type: 'END_TURN' });
-			
+
 			// CPUターン中に手動でCPUのモンスターを配置（テスト用）
 			let currentContext = testActor.getSnapshot().context;
-			const cpuMonster = currentContext.players[1].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+			const cpuMonster = currentContext.players[1].hand.find(
+				(card: Card) => card.type === 'monster'
+			) as MonsterCard;
 			currentContext.players[1].fieldGrid[0][1].card = cpuMonster;
 			currentContext.players[1].fieldGrid[0][1].isWaiting = true;
 
 			// プレイヤー1のターンが戻ってくるまで待つ
-			await new Promise(resolve => setTimeout(resolve, 2100));
-			
+			await new Promise((resolve) => setTimeout(resolve, 2100));
+
 			currentContext = testActor.getSnapshot().context;
 			// プレイヤー1のモンスターの待機状態は解除されている
 			expect(currentContext.players[0].fieldGrid[0][0].isWaiting).toBe(false);
@@ -296,5 +319,4 @@ describe('ゲーム状態機械', () => {
 			expect(currentContext.players[1].fieldGrid[0][1].isWaiting).toBe(true);
 		});
 	});
-
 });

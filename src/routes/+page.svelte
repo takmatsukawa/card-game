@@ -58,9 +58,7 @@
 		<div class="mb-8 grid grid-cols-2 gap-4">
 			{#each players as player, i}
 				<div
-					class="rounded-lg bg-white p-4 shadow {currentPlayer === i
-						? 'ring-2 ring-blue-500'
-						: ''}"
+					class="rounded-lg bg-white p-4 shadow {currentPlayer === i ? 'ring-2 ring-blue-500' : ''}"
 				>
 					<h2 class="mb-2 text-xl font-bold">{player.name}</h2>
 					<p>HP: {player.hp}</p>

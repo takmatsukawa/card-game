@@ -21,32 +21,30 @@ function createSampleMonsterCard(id: number = 1): MonsterCard {
 		type: 'monster',
 		name: 'テストモンスター',
 		hp: 5,
-		commands: [
-			{ manaCost: 1, damage: 2, description: '通常攻撃' }
-		]
+		commands: [{ manaCost: 1, damage: 2, description: '通常攻撃' }]
 	};
 }
 
 function canPlaceCard(
-	fieldGrid: FieldGrid, 
-	card: MonsterCard, 
-	row: number, 
-	col: number, 
+	fieldGrid: FieldGrid,
+	card: MonsterCard,
+	row: number,
+	col: number,
 	playerMana: number
 ): boolean {
 	if (row < 0 || row >= fieldGrid.length || col < 0 || col >= fieldGrid[0].length) {
 		return false;
 	}
-	
+
 	const cell = fieldGrid[row][col];
 	return !cell.card && card.type === 'monster' && playerMana >= 1;
 }
 
 function placeCard(
-	fieldGrid: FieldGrid, 
-	card: MonsterCard, 
-	row: number, 
-	col: number, 
+	fieldGrid: FieldGrid,
+	card: MonsterCard,
+	row: number,
+	col: number,
 	player: Player
 ): { success: boolean; newMana: number } {
 	if (!canPlaceCard(fieldGrid, card, row, col, player.mana)) {
@@ -56,7 +54,7 @@ function placeCard(
 	const cell = fieldGrid[row][col];
 	cell.card = card;
 	cell.isWaiting = true;
-	
+
 	return { success: true, newMana: player.mana - 1 };
 }
 
@@ -65,7 +63,7 @@ describe('カード配置ロジック', () => {
 		it('空のセルにモンスターカードを配置できる', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			const card = createSampleMonsterCard();
-			
+
 			expect(canPlaceCard(fieldGrid, card, 0, 0, 5)).toBe(true);
 		});
 
@@ -73,23 +71,23 @@ describe('カード配置ロジック', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			const card1 = createSampleMonsterCard(1);
 			const card2 = createSampleMonsterCard(2);
-			
+
 			fieldGrid[0][0].card = card1;
-			
+
 			expect(canPlaceCard(fieldGrid, card2, 0, 0, 5)).toBe(false);
 		});
 
 		it('マナが不足している場合は配置できない', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			const card = createSampleMonsterCard();
-			
+
 			expect(canPlaceCard(fieldGrid, card, 0, 0, 0)).toBe(false);
 		});
 
 		it('範囲外の座標には配置できない', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			const card = createSampleMonsterCard();
-			
+
 			expect(canPlaceCard(fieldGrid, card, -1, 0, 5)).toBe(false);
 			expect(canPlaceCard(fieldGrid, card, 0, -1, 5)).toBe(false);
 			expect(canPlaceCard(fieldGrid, card, 2, 0, 5)).toBe(false);
@@ -113,7 +111,7 @@ describe('カード配置ロジック', () => {
 			};
 
 			const result = placeCard(fieldGrid, card, 0, 0, player);
-			
+
 			expect(result.success).toBe(true);
 			expect(result.newMana).toBe(4);
 			expect(fieldGrid[0][0].card).toBe(card);
@@ -137,10 +135,10 @@ describe('カード配置ロジック', () => {
 
 			// 最初にカードを配置
 			fieldGrid[0][0].card = card1;
-			
+
 			// 同じ場所に2枚目を配置しようとする
 			const result = placeCard(fieldGrid, card2, 0, 0, player);
-			
+
 			expect(result.success).toBe(false);
 			expect(result.newMana).toBe(5);
 			expect(fieldGrid[0][0].card).toBe(card1);
@@ -151,7 +149,7 @@ describe('カード配置ロジック', () => {
 		it('すべてのセルが空の場合', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			let emptyCount = 0;
-			
+
 			for (let row = 0; row < fieldGrid.length; row++) {
 				for (let col = 0; col < fieldGrid[row].length; col++) {
 					if (!fieldGrid[row][col].card) {
@@ -159,20 +157,20 @@ describe('カード配置ロジック', () => {
 					}
 				}
 			}
-			
+
 			expect(emptyCount).toBe(4);
 		});
 
 		it('盤面が満杯の場合', () => {
 			const fieldGrid = createEmptyFieldGrid();
-			
+
 			// すべてのセルにカードを配置
 			for (let row = 0; row < fieldGrid.length; row++) {
 				for (let col = 0; col < fieldGrid[row].length; col++) {
 					fieldGrid[row][col].card = createSampleMonsterCard(row * 2 + col + 1);
 				}
 			}
-			
+
 			let filledCount = 0;
 			for (let row = 0; row < fieldGrid.length; row++) {
 				for (let col = 0; col < fieldGrid[row].length; col++) {
@@ -181,22 +179,22 @@ describe('カード配置ロジック', () => {
 					}
 				}
 			}
-			
+
 			expect(filledCount).toBe(4);
 		});
 
 		it('待機状態の管理', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			const card = createSampleMonsterCard();
-			
+
 			fieldGrid[0][0].card = card;
 			fieldGrid[0][0].isWaiting = true;
-			
+
 			expect(fieldGrid[0][0].isWaiting).toBe(true);
-			
+
 			// 待機状態を解除
 			fieldGrid[0][0].isWaiting = false;
-			
+
 			expect(fieldGrid[0][0].isWaiting).toBe(false);
 		});
 	});
@@ -210,18 +208,18 @@ describe('カード配置ロジック', () => {
 				{ row: 1, col: 0 },
 				{ row: 1, col: 1 }
 			];
-			
-			cornerPositions.forEach(pos => {
+
+			cornerPositions.forEach((pos) => {
 				expect(canPlaceCard(fieldGrid, createSampleMonsterCard(), pos.row, pos.col, 5)).toBe(true);
 			});
 		});
 
 		it('配置可能なセルの数を正確に計算', () => {
 			const fieldGrid = createEmptyFieldGrid();
-			
+
 			// 1つのセルにカードを配置
 			fieldGrid[0][0].card = createSampleMonsterCard();
-			
+
 			let availableSlots = 0;
 			for (let row = 0; row < fieldGrid.length; row++) {
 				for (let col = 0; col < fieldGrid[row].length; col++) {
@@ -230,7 +228,7 @@ describe('カード配置ロジック', () => {
 					}
 				}
 			}
-			
+
 			expect(availableSlots).toBe(3);
 		});
 	});
