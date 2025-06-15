@@ -55,35 +55,33 @@
 	}
 
 	// ゲームの状態
-	let gameState = {
-		currentPlayer: 0,
-		players: [
-			{
-				id: 1,
-				name: 'プレイヤー1',
-				hp: 20,
-				mana: 10,
-				deck: [],
-				hand: [],
-				field: [],
-				fieldGrid: createEmptyFieldGrid()
-			},
-			{
-				id: 2,
-				name: 'プレイヤー2',
-				hp: 20,
-				mana: 10,
-				deck: [],
-				hand: [],
-				field: [],
-				fieldGrid: createEmptyFieldGrid()
-			}
-		] as Player[]
-	};
+	let currentPlayer = $state(0);
+	let players = $state([
+		{
+			id: 1,
+			name: 'プレイヤー1',
+			hp: 20,
+			mana: 10,
+			deck: [],
+			hand: [],
+			field: [],
+			fieldGrid: createEmptyFieldGrid()
+		},
+		{
+			id: 2,
+			name: 'プレイヤー2',
+			hp: 20,
+			mana: 10,
+			deck: [],
+			hand: [],
+			field: [],
+			fieldGrid: createEmptyFieldGrid()
+		}
+	] as Player[]);
 
 	// 選択中のカードとマスの状態
-	let selectedCard: Card | null = null;
-	let selectedCell: { row: number; col: number } | null = null;
+	let selectedCard = $state<Card | null>(null);
+	let selectedCell = $state<{ row: number; col: number } | null>(null);
 
 	// サンプルカードの作成
 	function createSampleCards(): Card[] {
@@ -141,20 +139,15 @@
 
 	onMount(() => {
 		// サンプルカードをデッキに追加
-		const newPlayers = gameState.players.map((player) => {
+		players = players.map((player) => {
 			const cards = createSampleCards();
-			const newPlayer = {
+			return {
 				...player,
 				deck: cards,
 				hand: [...cards],
 				fieldGrid: createEmptyFieldGrid()
 			};
-			return newPlayer;
 		});
-		gameState = {
-			...gameState,
-			players: newPlayers
-		};
 	});
 
 	// カードの種類に応じた背景色を取得
@@ -170,8 +163,8 @@
 
 	// CPUの行動を制御する関数
 	function cpuAction() {
-		const cpu = gameState.players[1];
-		const player = gameState.players[0];
+		const cpu = players[1];
+		const player = players[0];
 		
 		// 1. 場の状況分析
 		const emptyCells = findEmptyCells(cpu.fieldGrid);
@@ -229,7 +222,7 @@
 
 	// カードを配置
 	function placeCard(card: Card, position: { row: number; col: number }) {
-		const cpu = gameState.players[1];
+		const cpu = players[1];
 		const cell = cpu.fieldGrid[position.row][position.col];
 		
 		if (!cell.card) {
@@ -240,18 +233,12 @@
 			// 手札からカードを削除
 			const cardId = card.id;
 			cpu.hand = cpu.hand.filter((c) => c.id !== cardId);
-			
-			// gameStateを更新
-			gameState = {
-				...gameState,
-				players: [...gameState.players]
-			};
 		}
 	}
 
 	// 攻撃可能かどうかを判定
 	function canAttack(): boolean {
-		const cpu = gameState.players[1];
+		const cpu = players[1];
 		return cpu.fieldGrid.some(row => 
 			row.some(cell => cell.card && !cell.isWaiting)
 		);
@@ -259,7 +246,7 @@
 
 	// 攻撃対象を探す
 	function findAttackTargets(): { row: number; col: number }[] {
-		const player = gameState.players[0];
+		const player = players[0];
 		const targets: { row: number; col: number }[] = [];
 		
 		for (let row = 0; row < player.fieldGrid.length; row++) {
@@ -275,8 +262,8 @@
 
 	// 最適な攻撃を実行
 	function executeBestAttack(targets: { row: number; col: number }[]) {
-		const cpu = gameState.players[1];
-		const player = gameState.players[0];
+		const cpu = players[1];
+		const player = players[0];
 		
 		// 攻撃可能なモンスターを探す
 		const attackers: { row: number; col: number; card: MonsterCard }[] = [];
@@ -316,30 +303,15 @@
 				}
 			}
 		});
-		
-		// gameStateを更新
-		gameState = {
-			...gameState,
-			players: [...gameState.players]
-		};
 	}
 
 	// ターンエンド処理を更新
 	function endTurn() {
-		// 現在のプレイヤーのインデックスを取得
-		const currentPlayerIndex = gameState.currentPlayer;
-
 		// 次のプレイヤーのインデックスを計算
-		const nextPlayerIndex = (currentPlayerIndex + 1) % 2;
-
-		// ターンを次のプレイヤーに移す
-		gameState = {
-			...gameState,
-			currentPlayer: nextPlayerIndex
-		};
+		currentPlayer = (currentPlayer + 1) % 2;
 
 		// 相手プレイヤーのターンの場合、CPUの行動を実行
-		if (nextPlayerIndex === 1) {
+		if (currentPlayer === 1) {
 			setTimeout(() => {
 				cpuAction();
 				// CPUの行動後に自動的にターンエンド
@@ -352,7 +324,7 @@
 
 	// カードを選択する関数
 	function selectCard(card: Card) {
-		if (card.type === 'monster' && gameState.players[gameState.currentPlayer].mana >= 1) {
+		if (card.type === 'monster' && players[currentPlayer].mana >= 1) {
 			selectedCard = card;
 		}
 	}
@@ -360,28 +332,22 @@
 	// マスを選択する関数
 	function selectCell(row: number, col: number) {
 		if (selectedCard && selectedCard.type === 'monster') {
-			const currentPlayer = gameState.players[gameState.currentPlayer];
-			const cell = currentPlayer.fieldGrid[row][col];
+			const currentPlayerObj = players[currentPlayer];
+			const cell = currentPlayerObj.fieldGrid[row][col];
 
 			if (!cell.card) {
 				// マナを消費してモンスターを配置
-				currentPlayer.mana -= 1;
+				currentPlayerObj.mana -= 1;
 				cell.card = selectedCard as MonsterCard;
 				cell.isWaiting = true;
 
 				// 手札からカードを削除
 				const cardId = selectedCard.id;
-				currentPlayer.hand = currentPlayer.hand.filter((c) => c.id !== cardId);
+				currentPlayerObj.hand = currentPlayerObj.hand.filter((c) => c.id !== cardId);
 
 				// 選択状態をリセット
 				selectedCard = null;
 				selectedCell = null;
-
-				// gameStateを更新してリアクティビティをトリガー
-				gameState = {
-					...gameState,
-					players: [...gameState.players]
-				};
 			}
 		}
 	}
@@ -394,15 +360,15 @@
 		<!-- 現在のターン表示 -->
 		<div class="mb-4 text-center">
 			<p class="text-xl font-bold">
-				現在のターン: {gameState.players[gameState.currentPlayer].name}
+				現在のターン: {players[currentPlayer].name}
 			</p>
 		</div>
 
 		<!-- プレイヤーステータス（2人分） -->
 		<div class="mb-8 grid grid-cols-2 gap-4">
-			{#each gameState.players as player, i}
+			{#each players as player, i}
 				<div
-					class="rounded-lg bg-white p-4 shadow {gameState.currentPlayer === i
+					class="rounded-lg bg-white p-4 shadow {currentPlayer === i
 						? 'ring-2 ring-blue-500'
 						: ''}"
 				>
@@ -416,11 +382,11 @@
 		</div>
 
 		<!-- ターンエンドボタン -->
-		{#if gameState.currentPlayer === 0}
+		{#if currentPlayer === 0}
 			<div class="mb-8 text-center">
 				<button
-					on:click={endTurn}
-					on:keydown={(e) => e.key === 'Enter' && endTurn()}
+					onclick={endTurn}
+					onkeydown={(e) => e.key === 'Enter' && endTurn()}
 					class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
 				>
 					ターンエンド
@@ -435,7 +401,7 @@
 		<div class="mb-8 flex flex-col items-center">
 			<!-- 2x2マス -->
 			<div class="mb-2 grid grid-cols-2 gap-4">
-				{#each gameState.players[1].fieldGrid as row, rowIndex}
+				{#each players[1].fieldGrid as row, rowIndex}
 					{#each row as cell, colIndex}
 						<div class="flex h-20 w-20 items-center justify-center rounded border bg-gray-50">
 							{#if cell.card}
@@ -467,15 +433,15 @@
 			</svg>
 			<!-- 2x2マス -->
 			<div class="mt-2 grid grid-cols-2 gap-4">
-				{#each gameState.players[0].fieldGrid as row, rowIndex}
+				{#each players[0].fieldGrid as row, rowIndex}
 					{#each row as cell, colIndex}
 						<div
 							class="flex h-20 w-20 cursor-pointer items-center justify-center rounded border bg-gray-50 hover:bg-gray-100 {selectedCell?.row ===
 								rowIndex && selectedCell?.col === colIndex
 								? 'ring-2 ring-blue-500'
 								: ''}"
-							on:click={() => selectCell(rowIndex, colIndex)}
-							on:keydown={(e) => e.key === 'Enter' && selectCell(rowIndex, colIndex)}
+							onclick={() => selectCell(rowIndex, colIndex)}
+							onkeydown={(e) => e.key === 'Enter' && selectCell(rowIndex, colIndex)}
 							role="button"
 							tabindex="0"
 						>
@@ -500,7 +466,7 @@
 		<div class="mx-auto max-w-4xl px-4">
 			<h2 class="mb-4 text-xl font-bold">手札</h2>
 			<div class="flex gap-4 overflow-x-auto p-4">
-				{#each gameState.players[0].hand as card}
+				{#each players[0].hand as card}
 					<div
 						class="h-64 w-48 flex-shrink-0 {getCardBackgroundColor(
 							card
@@ -508,8 +474,8 @@
 						card.id
 							? 'ring-4 ring-blue-500'
 							: ''}"
-						on:click={() => selectCard(card)}
-						on:keydown={(e) => e.key === 'Enter' && selectCard(card)}
+						onclick={() => selectCard(card)}
+						onkeydown={(e) => e.key === 'Enter' && selectCard(card)}
 						role="button"
 						tabindex="0"
 					>
@@ -543,8 +509,8 @@
 		<p class="text-sm">マスを選択して配置してください</p>
 		<button
 			class="mt-2 rounded bg-gray-200 px-3 py-1 text-sm hover:bg-gray-300"
-			on:click={resetSelection}
-			on:keydown={(e) => e.key === 'Enter' && resetSelection()}
+			onclick={resetSelection}
+			onkeydown={(e) => e.key === 'Enter' && resetSelection()}
 		>
 			キャンセル
 		</button>
