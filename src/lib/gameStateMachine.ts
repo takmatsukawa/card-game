@@ -2,7 +2,7 @@ import { assign, createActor, setup } from 'xstate';
 
 // カードの型定義（既存の型と同様）
 export interface MonsterCommand {
-	manaCost: number;
+	stoneCost: number;
 	damage: number;
 	description: string;
 }
@@ -19,7 +19,7 @@ export interface MagicCard {
 	id: number;
 	type: 'magic';
 	name: string;
-	manaCost: number;
+	stoneCost: number;
 	description: string;
 }
 
@@ -36,7 +36,7 @@ export interface Player {
 	id: number;
 	name: string;
 	hp: number;
-	mana: number;
+	stone: number;
 	deck: Card[];
 	hand: Card[];
 	field: MonsterCard[];
@@ -86,15 +86,15 @@ function createSampleCards(): Card[] {
 			name: 'スライム',
 			hp: 5,
 			commands: [
-				{ manaCost: 1, damage: 2, description: '通常攻撃' },
-				{ manaCost: 2, damage: 4, description: '強力な攻撃' }
+				{ stoneCost: 1, damage: 2, description: '通常攻撃' },
+				{ stoneCost: 2, damage: 4, description: '強力な攻撃' }
 			]
 		},
 		{
 			id: 2,
 			type: 'magic',
 			name: 'ファイアボール',
-			manaCost: 3,
+			stoneCost: 3,
 			description: '相手に3ダメージを与える'
 		},
 		{
@@ -103,15 +103,15 @@ function createSampleCards(): Card[] {
 			name: 'ゴブリン',
 			hp: 3,
 			commands: [
-				{ manaCost: 1, damage: 1, description: '素早い攻撃' },
-				{ manaCost: 3, damage: 3, description: '連続攻撃' }
+				{ stoneCost: 1, damage: 1, description: '素早い攻撃' },
+				{ stoneCost: 3, damage: 3, description: '連続攻撃' }
 			]
 		},
 		{
 			id: 4,
 			type: 'magic',
 			name: 'ヒール',
-			manaCost: 2,
+			stoneCost: 2,
 			description: '自分に2回復する'
 		}
 	];
@@ -126,7 +126,7 @@ function createInitialContext(): GameContext {
 				id: 1,
 				name: 'プレイヤー1',
 				hp: 20,
-				mana: 10,
+				stone: 10,
 				deck: [...cards],
 				hand: [...cards],
 				field: [],
@@ -136,7 +136,7 @@ function createInitialContext(): GameContext {
 				id: 2,
 				name: 'プレイヤー2',
 				hp: 20,
-				mana: 10,
+				stone: 10,
 				deck: [...cards],
 				hand: [...cards],
 				field: [],
@@ -184,9 +184,9 @@ export const gameStateMachine = setup({
 					const currentPlayerObj = newPlayers[context.currentPlayer];
 					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
 
-					if (!cell.card && event.card.type === 'monster' && currentPlayerObj.mana >= 1) {
-						// マナを消費してモンスターを配置
-						currentPlayerObj.mana -= 1;
+					if (!cell.card && event.card.type === 'monster' && currentPlayerObj.stone >= 1) {
+						// ストーンを消費してモンスターを配置
+						currentPlayerObj.stone -= 1;
 						cell.card = event.card as MonsterCard;
 						cell.isWaiting = true;
 
@@ -256,17 +256,17 @@ export const gameStateMachine = setup({
 
 				// CPUの行動ロジック
 				const emptyCells = findEmptyCells(cpu.fieldGrid);
-				const playableCards = cpu.hand.filter((card) => card.type === 'monster' && cpu.mana >= 1);
+				const playableCards = cpu.hand.filter((card) => card.type === 'monster' && cpu.stone >= 1);
 
 				// カード配置
-				while (emptyCells.length > 0 && playableCards.length > 0 && cpu.mana >= 1) {
+				while (emptyCells.length > 0 && playableCards.length > 0 && cpu.stone >= 1) {
 					const bestCard = selectBestCard(playableCards);
 					const bestPosition = findBestPosition(emptyCells);
 
 					// カードを配置
 					const cell = cpu.fieldGrid[bestPosition.row][bestPosition.col];
 					if (!cell.card) {
-						cpu.mana -= 1;
+						cpu.stone -= 1;
 						cell.card = bestCard as MonsterCard;
 						cell.isWaiting = true;
 						cpu.hand = cpu.hand.filter((c) => c.id !== bestCard.id);
@@ -285,7 +285,7 @@ export const gameStateMachine = setup({
 			if (event.type === 'PLACE_CARD') {
 				const currentPlayerObj = context.players[context.currentPlayer];
 				const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-				return !cell.card && event.card.type === 'monster' && currentPlayerObj.mana >= 1;
+				return !cell.card && event.card.type === 'monster' && currentPlayerObj.stone >= 1;
 			}
 			return false;
 		},

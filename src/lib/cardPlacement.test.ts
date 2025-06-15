@@ -21,7 +21,7 @@ function createSampleMonsterCard(id: number = 1): MonsterCard {
 		type: 'monster',
 		name: 'テストモンスター',
 		hp: 5,
-		commands: [{ manaCost: 1, damage: 2, description: '通常攻撃' }]
+		commands: [{ stoneCost: 1, damage: 2, description: '通常攻撃' }]
 	};
 }
 
@@ -30,14 +30,14 @@ function canPlaceCard(
 	card: MonsterCard,
 	row: number,
 	col: number,
-	playerMana: number
+	playerStone: number
 ): boolean {
 	if (row < 0 || row >= fieldGrid.length || col < 0 || col >= fieldGrid[0].length) {
 		return false;
 	}
 
 	const cell = fieldGrid[row][col];
-	return !cell.card && card.type === 'monster' && playerMana >= 1;
+	return !cell.card && card.type === 'monster' && playerStone >= 1;
 }
 
 function placeCard(
@@ -46,16 +46,16 @@ function placeCard(
 	row: number,
 	col: number,
 	player: Player
-): { success: boolean; newMana: number } {
-	if (!canPlaceCard(fieldGrid, card, row, col, player.mana)) {
-		return { success: false, newMana: player.mana };
+): { success: boolean; newStone: number } {
+	if (!canPlaceCard(fieldGrid, card, row, col, player.stone)) {
+		return { success: false, newStone: player.stone };
 	}
 
 	const cell = fieldGrid[row][col];
 	cell.card = card;
 	cell.isWaiting = true;
 
-	return { success: true, newMana: player.mana - 1 };
+	return { success: true, newStone: player.stone - 1 };
 }
 
 describe('カード配置ロジック', () => {
@@ -77,7 +77,7 @@ describe('カード配置ロジック', () => {
 			expect(canPlaceCard(fieldGrid, card2, 0, 0, 5)).toBe(false);
 		});
 
-		it('マナが不足している場合は配置できない', () => {
+		it('ストーンが不足している場合は配置できない', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			const card = createSampleMonsterCard();
 
@@ -103,7 +103,7 @@ describe('カード配置ロジック', () => {
 				id: 1,
 				name: 'テストプレイヤー',
 				hp: 20,
-				mana: 5,
+				stone: 5,
 				deck: [],
 				hand: [card],
 				field: [],
@@ -113,12 +113,12 @@ describe('カード配置ロジック', () => {
 			const result = placeCard(fieldGrid, card, 0, 0, player);
 
 			expect(result.success).toBe(true);
-			expect(result.newMana).toBe(4);
+			expect(result.newStone).toBe(4);
 			expect(fieldGrid[0][0].card).toBe(card);
 			expect(fieldGrid[0][0].isWaiting).toBe(true);
 		});
 
-		it('配置に失敗した場合はマナが消費されない', () => {
+		it('配置に失敗した場合はストーンが消費されない', () => {
 			const fieldGrid = createEmptyFieldGrid();
 			const card1 = createSampleMonsterCard(1);
 			const card2 = createSampleMonsterCard(2);
@@ -126,7 +126,7 @@ describe('カード配置ロジック', () => {
 				id: 1,
 				name: 'テストプレイヤー',
 				hp: 20,
-				mana: 5,
+				stone: 5,
 				deck: [],
 				hand: [card1, card2],
 				field: [],
@@ -140,7 +140,7 @@ describe('カード配置ロジック', () => {
 			const result = placeCard(fieldGrid, card2, 0, 0, player);
 
 			expect(result.success).toBe(false);
-			expect(result.newMana).toBe(5);
+			expect(result.newStone).toBe(5);
 			expect(fieldGrid[0][0].card).toBe(card1);
 		});
 	});

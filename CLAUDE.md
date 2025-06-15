@@ -19,7 +19,7 @@ The main game implementation is in `src/routes/+page.svelte` and includes:
 - Card system with Monster and Magic card types
 - 2x2 grid-based battlefield for each player
 - Turn-based gameplay with CPU opponent
-- Mana system for card costs
+- Stone (mana) system for card costs
 - Combat system with HP and damage
 
 ### State Management with XState

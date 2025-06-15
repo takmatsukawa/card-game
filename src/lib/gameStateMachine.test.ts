@@ -29,9 +29,9 @@ describe('ゲーム状態機械', () => {
 		it('各プレイヤーのHPが20、マナが10で初期化される', () => {
 			const context = actor.getSnapshot().context;
 			expect(context.players[0].hp).toBe(20);
-			expect(context.players[0].mana).toBe(10);
+			expect(context.players[0].stone).toBe(10);
 			expect(context.players[1].hp).toBe(20);
-			expect(context.players[1].mana).toBe(10);
+			expect(context.players[1].stone).toBe(10);
 		});
 
 		it('各プレイヤーの盤面が2x2の空盤面で初期化される', () => {
@@ -90,7 +90,7 @@ describe('ゲーム状態機械', () => {
 			const monsterCard = context.players[0].hand.find(
 				(card: Card) => card.type === 'monster'
 			) as MonsterCard;
-			const initialMana = context.players[0].mana;
+			const initialStone = context.players[0].stone;
 
 			actor.send({
 				type: 'PLACE_CARD',
@@ -104,14 +104,14 @@ describe('ゲーム状態機械', () => {
 
 			expect(placedCard).toBe(monsterCard);
 			expect(newContext.players[0].fieldGrid[0][0].isWaiting).toBe(true);
-			expect(newContext.players[0].mana).toBe(initialMana - 1);
+			expect(newContext.players[0].stone).toBe(initialStone - 1);
 			expect(newContext.players[0].hand).not.toContain(monsterCard);
 		});
 
 		it('マジックカードは配置できない（ガード条件により無視される）', () => {
 			const context = actor.getSnapshot().context;
 			const magicCard = context.players[0].hand.find((card) => card.type === 'magic')!;
-			const initialMana = context.players[0].mana;
+			const initialStone = context.players[0].stone;
 			const initialFieldState = JSON.parse(JSON.stringify(context.players[0].fieldGrid));
 
 			actor.send({
@@ -126,7 +126,7 @@ describe('ゲーム状態機械', () => {
 			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(
 				JSON.stringify(initialFieldState)
 			);
-			expect(newContext.players[0].mana).toBe(initialMana);
+			expect(newContext.players[0].stone).toBe(initialStone);
 			expect(newContext.players[0].hand).toContain(magicCard);
 		});
 
@@ -151,7 +151,7 @@ describe('ゲーム状態機械', () => {
 			});
 
 			const initialContext = testActor.getSnapshot().context;
-			const initialMana = initialContext.players[0].mana;
+			const initialStone = initialContext.players[0].stone;
 			const placedCard = initialContext.players[0].fieldGrid[0][0].card;
 
 			// 同じセルに2枚目のカードを配置しようとする
@@ -165,7 +165,7 @@ describe('ゲーム状態機械', () => {
 			const newContext = testActor.getSnapshot().context;
 			// ガード条件により無視されるため、元のカードが残る
 			expect(newContext.players[0].fieldGrid[0][0].card).toBe(placedCard);
-			expect(newContext.players[0].mana).toBe(initialMana);
+			expect(newContext.players[0].stone).toBe(initialStone);
 			// 2枚目のカードは手札に残っている（配置されなかった）
 			expect(newContext.players[0].hand.length).toBe(initialContext.players[0].hand.length);
 		});
@@ -177,7 +177,7 @@ describe('ゲーム状態機械', () => {
 
 			// アクターのコンテキストを取得し、マナを0に設定
 			const initialContext = testActor.getSnapshot().context;
-			initialContext.players[0].mana = 0;
+			initialContext.players[0].stone = 0;
 
 			const monsterCard = initialContext.players[0].hand.find(
 				(card: Card) => card.type === 'monster'
@@ -196,7 +196,7 @@ describe('ゲーム状態機械', () => {
 			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(
 				JSON.stringify(initialFieldState)
 			);
-			expect(newContext.players[0].mana).toBe(0);
+			expect(newContext.players[0].stone).toBe(0);
 			expect(newContext.players[0].hand).toContain(monsterCard);
 		});
 	});

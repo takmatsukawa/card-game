@@ -29,7 +29,7 @@
 
 	// カードを選択する関数
 	function selectCard(card: Card) {
-		if (card.type === 'monster' && players[currentPlayer].mana >= 1) {
+		if (card.type === 'monster' && players[currentPlayer].stone >= 1) {
 			send({ type: 'SELECT_CARD', card });
 		}
 	}
@@ -63,7 +63,7 @@
 				>
 					<h2 class="mb-2 text-xl font-bold">{player.name}</h2>
 					<p>HP: {player.hp}</p>
-					<p>マナ: {player.mana}</p>
+					<p>ストーン: {player.stone}</p>
 					<p>手札: {player.hand.length}枚</p>
 				</div>
 			{/each}
@@ -167,14 +167,14 @@
 							<div class="space-y-2">
 								{#each card.commands as command}
 									<div class="bg-opacity-50 rounded bg-white p-2">
-										<p class="text-sm">マナ: {command.manaCost}</p>
+										<p class="text-sm">ストーン: {command.stoneCost}</p>
 										<p class="text-sm">ダメージ: {command.damage}</p>
 										<p class="text-xs">{command.description}</p>
 									</div>
 								{/each}
 							</div>
 						{:else}
-							<p class="mb-2 text-sm">マナ: {card.manaCost}</p>
+							<p class="mb-2 text-sm">ストーン: {card.stoneCost}</p>
 							<p class="text-sm">{card.description}</p>
 						{/if}
 					</div>
