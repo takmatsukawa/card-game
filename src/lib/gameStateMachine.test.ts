@@ -1,0 +1,212 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import { createActor } from 'xstate';
+import { gameStateMachine, createGameActor, type GameContext, type Card, type MonsterCard } from './gameStateMachine.ts';
+
+describe('ゲーム状態機械', () => {
+	let actor: ReturnType<typeof createGameActor>;
+
+	beforeEach(() => {
+		actor = createGameActor();
+		actor.start();
+	});
+
+	describe('初期状態', () => {
+		it('プレイヤーターンから開始される', () => {
+			expect(actor.getSnapshot().matches('playerTurn')).toBe(true);
+		});
+
+		it('2人のプレイヤーが作成される', () => {
+			const context = actor.getSnapshot().context;
+			expect(context.players).toHaveLength(2);
+			expect(context.players[0].id).toBe(1);
+			expect(context.players[1].id).toBe(2);
+		});
+
+		it('各プレイヤーのHPが20、マナが10で初期化される', () => {
+			const context = actor.getSnapshot().context;
+			expect(context.players[0].hp).toBe(20);
+			expect(context.players[0].mana).toBe(10);
+			expect(context.players[1].hp).toBe(20);
+			expect(context.players[1].mana).toBe(10);
+		});
+
+		it('各プレイヤーの盤面が2x2の空盤面で初期化される', () => {
+			const context = actor.getSnapshot().context;
+			expect(context.players[0].fieldGrid).toHaveLength(2);
+			expect(context.players[0].fieldGrid[0]).toHaveLength(2);
+			expect(context.players[0].fieldGrid[0][0].card).toBeNull();
+			expect(context.players[0].fieldGrid[0][0].isWaiting).toBe(false);
+		});
+
+		it('現在のプレイヤーが0（プレイヤー1）に設定される', () => {
+			const context = actor.getSnapshot().context;
+			expect(context.currentPlayer).toBe(0);
+		});
+
+		it('選択状態がリセットされている', () => {
+			const context = actor.getSnapshot().context;
+			expect(context.selectedCard).toBeNull();
+			expect(context.selectedCell).toBeNull();
+			expect(context.winner).toBeNull();
+		});
+	});
+
+	describe('カード選択', () => {
+		it('SELECT_CARDイベントでカードが選択される', () => {
+			const card = actor.getSnapshot().context.players[0].hand[0];
+			actor.send({ type: 'SELECT_CARD', card });
+			
+			const context = actor.getSnapshot().context;
+			expect(context.selectedCard).toBe(card);
+		});
+
+		it('RESET_SELECTIONイベントで選択がリセットされる', () => {
+			const card = actor.getSnapshot().context.players[0].hand[0];
+			actor.send({ type: 'SELECT_CARD', card });
+			actor.send({ type: 'RESET_SELECTION' });
+			
+			const context = actor.getSnapshot().context;
+			expect(context.selectedCard).toBeNull();
+			expect(context.selectedCell).toBeNull();
+		});
+	});
+
+	describe('セル選択', () => {
+		it('SELECT_CELLイベントでセルが選択される', () => {
+			actor.send({ type: 'SELECT_CELL', row: 0, col: 1 });
+			
+			const context = actor.getSnapshot().context;
+			expect(context.selectedCell).toEqual({ row: 0, col: 1 });
+		});
+	});
+
+	describe('カード配置', () => {
+		it('モンスターカードを空のセルに配置できる', () => {
+			const context = actor.getSnapshot().context;
+			const monsterCard = context.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+			const initialMana = context.players[0].mana;
+
+			actor.send({ 
+				type: 'PLACE_CARD', 
+				card: monsterCard, 
+				row: 0, 
+				col: 0 
+			});
+
+			const newContext = actor.getSnapshot().context;
+			const placedCard = newContext.players[0].fieldGrid[0][0].card;
+			
+			expect(placedCard).toBe(monsterCard);
+			expect(newContext.players[0].fieldGrid[0][0].isWaiting).toBe(true);
+			expect(newContext.players[0].mana).toBe(initialMana - 1);
+			expect(newContext.players[0].hand).not.toContain(monsterCard);
+		});
+
+		it('マジックカードは配置できない（ガード条件により無視される）', () => {
+			const context = actor.getSnapshot().context;
+			const magicCard = context.players[0].hand.find(card => card.type === 'magic')!;
+			const initialMana = context.players[0].mana;
+			const initialFieldState = JSON.parse(JSON.stringify(context.players[0].fieldGrid));
+
+			actor.send({ 
+				type: 'PLACE_CARD', 
+				card: magicCard, 
+				row: 0, 
+				col: 0 
+			});
+
+			const newContext = actor.getSnapshot().context;
+			// ガード条件によりアクションが実行されないため、状態は変わらない
+			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(JSON.stringify(initialFieldState));
+			expect(newContext.players[0].mana).toBe(initialMana);
+			expect(newContext.players[0].hand).toContain(magicCard);
+		});
+
+		it('既にカードが配置されているセルには配置できない', () => {
+			// 新しいアクターで独立したテストを実行
+			const testActor = createGameActor();
+			testActor.start();
+			
+			const context = testActor.getSnapshot().context;
+			const monsterCards = context.players[0].hand.filter((card: Card) => card.type === 'monster') as MonsterCard[];
+			const monsterCard1 = monsterCards[0];
+			const monsterCard2 = monsterCards[1];
+
+			// 最初のカードを配置
+			testActor.send({ 
+				type: 'PLACE_CARD', 
+				card: monsterCard1, 
+				row: 0, 
+				col: 0 
+			});
+
+			const initialContext = testActor.getSnapshot().context;
+			const initialMana = initialContext.players[0].mana;
+			const placedCard = initialContext.players[0].fieldGrid[0][0].card;
+
+			// 同じセルに2枚目のカードを配置しようとする
+			testActor.send({ 
+				type: 'PLACE_CARD', 
+				card: monsterCard2, 
+				row: 0, 
+				col: 0 
+			});
+
+			const newContext = testActor.getSnapshot().context;
+			// ガード条件により無視されるため、元のカードが残る
+			expect(newContext.players[0].fieldGrid[0][0].card).toBe(placedCard);
+			expect(newContext.players[0].mana).toBe(initialMana);
+			// 2枚目のカードは手札に残っている（配置されなかった）
+			expect(newContext.players[0].hand.length).toBe(initialContext.players[0].hand.length);
+		});
+
+		it('マナが不足している場合は配置できない', () => {
+			// 新しいアクターを作成してマナを直接設定
+			const testActor = createGameActor();
+			testActor.start();
+			
+			// アクターのコンテキストを取得し、マナを0に設定
+			const initialContext = testActor.getSnapshot().context;
+			initialContext.players[0].mana = 0;
+			
+			const monsterCard = initialContext.players[0].hand.find((card: Card) => card.type === 'monster') as MonsterCard;
+			const initialFieldState = JSON.parse(JSON.stringify(initialContext.players[0].fieldGrid));
+
+			testActor.send({ 
+				type: 'PLACE_CARD', 
+				card: monsterCard, 
+				row: 0, 
+				col: 0 
+			});
+
+			const newContext = testActor.getSnapshot().context;
+			// ガード条件により無視されるため、状態は変わらない
+			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(JSON.stringify(initialFieldState));
+			expect(newContext.players[0].mana).toBe(0);
+			expect(newContext.players[0].hand).toContain(monsterCard);
+		});
+	});
+
+	describe('ターン管理', () => {
+		it('END_TURNイベントでCPUターンに切り替わる', () => {
+			expect(actor.getSnapshot().matches('playerTurn')).toBe(true);
+			
+			actor.send({ type: 'END_TURN' });
+			
+			expect(actor.getSnapshot().matches('cpuTurn')).toBe(true);
+			expect(actor.getSnapshot().context.currentPlayer).toBe(1);
+		});
+
+		it('CPUターンは自動的にプレイヤーターンに戻る', async () => {
+			actor.send({ type: 'END_TURN' });
+			expect(actor.getSnapshot().matches('cpuTurn')).toBe(true);
+
+			// CPUターンの自動切り替えを待つ
+			await new Promise(resolve => setTimeout(resolve, 2100));
+			
+			expect(actor.getSnapshot().matches('playerTurn')).toBe(true);
+			expect(actor.getSnapshot().context.currentPlayer).toBe(0);
+		});
+	});
+
+});
