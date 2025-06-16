@@ -228,7 +228,9 @@ export const gameStateMachine = setup({
 					newCell.isWaiting = true;
 
 					// 手札からカードを削除
-					newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter((c) => c.id !== context.selectedCard!.id);
+					newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
+						(c) => c.id !== context.selectedCard!.id
+					);
 
 					// 配置成功時は両方の選択状態をクリア
 					return {
@@ -277,30 +279,6 @@ export const gameStateMachine = setup({
 		}),
 		switchTurn: assign({
 			currentPlayer: ({ context }) => (context.currentPlayer + 1) % 2,
-			selectedCard: null,
-			selectedCell: null
-		}),
-		switchTurnAndUpdateWaiting: assign({
-			currentPlayer: ({ context }) => (context.currentPlayer + 1) % 2,
-			players: ({ context }) => {
-				const newCurrentPlayer = (context.currentPlayer + 1) % 2;
-
-				return context.players.map((player, index) => {
-					if (index === newCurrentPlayer) {
-						return {
-							...player,
-							fieldGrid: player.fieldGrid.map((row) =>
-								row.map((cell) => ({
-									...cell,
-									isWaiting: cell.card ? false : cell.isWaiting
-								}))
-							)
-						};
-					}
-
-					return player;
-				});
-			},
 			selectedCard: null,
 			selectedCell: null
 		}),
@@ -389,7 +367,7 @@ export const gameStateMachine = setup({
 				},
 				END_TURN: {
 					target: 'cpuTurn',
-					actions: 'switchTurnAndUpdateWaiting'
+					actions: ['switchTurn', 'updateWaitingStatus']
 				}
 			}
 		},
@@ -398,7 +376,7 @@ export const gameStateMachine = setup({
 			after: {
 				2000: {
 					target: 'playerTurn',
-					actions: 'switchTurnAndUpdateWaiting'
+					actions: ['switchTurn', 'updateWaitingStatus']
 				}
 			}
 		},

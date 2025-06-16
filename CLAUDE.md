@@ -60,6 +60,12 @@ The game uses XState for predictable state management (`src/lib/gameStateMachine
 - **After Task Completion**: Always run `npm run format` after completing any development task to ensure consistent code formatting across the project
 - This applies to all code changes including new features, bug fixes, refactoring, and test additions
 
+### Testing After Code Changes
+
+- **After Program Changes**: Always run corresponding tests after making code changes to verify everything works correctly
+- Run `npm run test:unit` for unit tests or `npm test` for all tests
+- This ensures code changes don't break existing functionality
+
 ### XState Implementation Pattern
 
 The game follows XState best practices for state management:
