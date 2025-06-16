@@ -87,10 +87,8 @@ export type GameEvent =
 	| { type: 'SELECT_CARD'; card: Card }
 	| { type: 'SELECT_CELL'; row: number; col: number }
 	| { type: 'END_TURN' }
-	| { type: 'CPU_ACTION_COMPLETE' }
 	| { type: 'RESET_SELECTION' }
-	| { type: 'ATTACK'; attackerId: string; targetId: string }
-	| { type: 'GAME_OVER'; winner: number };
+	| { type: 'ATTACK'; attackerId: string; targetId: string };
 
 // 空の2x2盤面を作成する関数
 function createEmptyFieldGrid(): FieldGrid {
