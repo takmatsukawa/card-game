@@ -1,4 +1,5 @@
 import { assign, createActor, setup } from 'xstate';
+import { CARD_MASTER } from './cardMaster.ts';
 
 // ゲーム定数
 export const MONSTER_PLACEMENT_COST = 1;
@@ -90,42 +91,7 @@ function createEmptyFieldGrid(): FieldGrid {
 
 // サンプルカードの作成
 function createSampleCards(): Card[] {
-	return [
-		{
-			id: 1,
-			type: 'monster',
-			name: 'スライム',
-			hp: 5,
-			commands: [
-				{ stoneCost: 1, damage: 2, description: '通常攻撃' },
-				{ stoneCost: 2, damage: 4, description: '強力な攻撃' }
-			]
-		},
-		{
-			id: 2,
-			type: 'magic',
-			name: 'ファイアボール',
-			stoneCost: 3,
-			description: '相手に3ダメージを与える'
-		},
-		{
-			id: 3,
-			type: 'monster',
-			name: 'ゴブリン',
-			hp: 3,
-			commands: [
-				{ stoneCost: 1, damage: 1, description: '素早い攻撃' },
-				{ stoneCost: 3, damage: 3, description: '連続攻撃' }
-			]
-		},
-		{
-			id: 4,
-			type: 'magic',
-			name: 'ヒール',
-			stoneCost: 2,
-			description: '自分に2回復する'
-		}
-	];
+	return [CARD_MASTER[0], CARD_MASTER[0], CARD_MASTER[0], CARD_MASTER[0]];
 }
 
 // 初期状態の作成
