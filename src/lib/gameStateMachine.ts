@@ -1,5 +1,17 @@
 import { assign, createActor, setup } from 'xstate';
 
+// ゲーム定数
+export const MONSTER_PLACEMENT_COST = 1;
+export const FIELD_GRID_SIZE = 2;
+export const INITIAL_PLAYER_HP = 20;
+export const INITIAL_PLAYER_STONE = 10;
+export const CPU_ACTION_DELAY = 2000;
+export const PLAYER_1_ID = 1;
+export const PLAYER_2_ID = 2;
+export const PLAYER_TURN_INDEX = 0;
+export const CPU_TURN_INDEX = 1;
+export const TOTAL_PLAYERS = 2;
+
 // カードの型定義
 export interface MonsterCommand {
 	stoneCost: number;
@@ -65,16 +77,14 @@ export type GameEvent =
 
 // 空の2x2盤面を作成する関数
 function createEmptyFieldGrid(): FieldGrid {
-	return [
-		[
-			{ card: null, isWaiting: false },
-			{ card: null, isWaiting: false }
-		],
-		[
-			{ card: null, isWaiting: false },
-			{ card: null, isWaiting: false }
-		]
-	];
+	const grid: FieldGrid = [];
+	for (let row = 0; row < FIELD_GRID_SIZE; row++) {
+		grid[row] = [];
+		for (let col = 0; col < FIELD_GRID_SIZE; col++) {
+			grid[row][col] = { card: null, isWaiting: false };
+		}
+	}
+	return grid;
 }
 
 // サンプルカードの作成
@@ -123,27 +133,27 @@ function createInitialContext(): GameContext {
 	return {
 		players: [
 			{
-				id: 1,
+				id: PLAYER_1_ID,
 				name: 'プレイヤー1',
-				hp: 20,
-				stone: 10,
+				hp: INITIAL_PLAYER_HP,
+				stone: INITIAL_PLAYER_STONE,
 				deck: [...cards],
 				hand: [...cards],
 				field: [],
 				fieldGrid: createEmptyFieldGrid()
 			},
 			{
-				id: 2,
+				id: PLAYER_2_ID,
 				name: 'プレイヤー2',
-				hp: 20,
-				stone: 10,
+				hp: INITIAL_PLAYER_HP,
+				stone: INITIAL_PLAYER_STONE,
 				deck: [...cards],
 				hand: [...cards],
 				field: [],
 				fieldGrid: createEmptyFieldGrid()
 			}
 		],
-		currentPlayer: 0,
+		currentPlayer: PLAYER_TURN_INDEX,
 		selectedCard: null,
 		selectedCell: null,
 		winner: null
@@ -180,13 +190,17 @@ export const gameStateMachine = setup({
 				const cell = currentPlayerObj.fieldGrid[row][col];
 
 				// カード配置が可能な場合
-				if (!cell.card && event.card.type === 'monster' && currentPlayerObj.stone >= 1) {
+				if (
+					!cell.card &&
+					event.card.type === 'monster' &&
+					currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+				) {
 					const newPlayers = [...context.players];
 					const newCurrentPlayerObj = newPlayers[context.currentPlayer];
 					const newCell = newCurrentPlayerObj.fieldGrid[row][col];
 
 					// ストーンを消費してモンスターを配置
-					newCurrentPlayerObj.stone -= 1;
+					newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
 					newCell.card = event.card as MonsterCard;
 					newCell.isWaiting = true;
 
@@ -217,13 +231,17 @@ export const gameStateMachine = setup({
 				const cell = currentPlayerObj.fieldGrid[event.row][event.col];
 
 				// カード配置が可能な場合
-				if (!cell.card && context.selectedCard.type === 'monster' && currentPlayerObj.stone >= 1) {
+				if (
+					!cell.card &&
+					context.selectedCard.type === 'monster' &&
+					currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+				) {
 					const newPlayers = [...context.players];
 					const newCurrentPlayerObj = newPlayers[context.currentPlayer];
 					const newCell = newCurrentPlayerObj.fieldGrid[event.row][event.col];
 
 					// ストーンを消費してモンスターを配置
-					newCurrentPlayerObj.stone -= 1;
+					newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
 					newCell.card = context.selectedCard as MonsterCard;
 					newCell.isWaiting = true;
 
@@ -261,9 +279,13 @@ export const gameStateMachine = setup({
 					const currentPlayerObj = newPlayers[context.currentPlayer];
 					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
 
-					if (!cell.card && event.card.type === 'monster' && currentPlayerObj.stone >= 1) {
+					if (
+						!cell.card &&
+						event.card.type === 'monster' &&
+						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+					) {
 						// ストーンを消費してモンスターを配置
-						currentPlayerObj.stone -= 1;
+						currentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
 						cell.card = event.card as MonsterCard;
 						cell.isWaiting = true;
 
@@ -278,7 +300,7 @@ export const gameStateMachine = setup({
 			selectedCell: null
 		}),
 		switchTurn: assign({
-			currentPlayer: ({ context }) => (context.currentPlayer + 1) % 2,
+			currentPlayer: ({ context }) => (context.currentPlayer + 1) % TOTAL_PLAYERS,
 			selectedCard: null,
 			selectedCell: null
 		}),
@@ -304,22 +326,27 @@ export const gameStateMachine = setup({
 		cpuAction: assign({
 			players: ({ context }) => {
 				const newPlayers = [...context.players];
-				const cpu = newPlayers[1];
-				const player = newPlayers[0];
+				const cpu = newPlayers[CPU_TURN_INDEX];
 
 				// CPUの行動ロジック
 				const emptyCells = findEmptyCells(cpu.fieldGrid);
-				const playableCards = cpu.hand.filter((card) => card.type === 'monster' && cpu.stone >= 1);
+				const playableCards = cpu.hand.filter(
+					(card) => card.type === 'monster' && cpu.stone >= MONSTER_PLACEMENT_COST
+				);
 
 				// カード配置
-				while (emptyCells.length > 0 && playableCards.length > 0 && cpu.stone >= 1) {
+				while (
+					emptyCells.length > 0 &&
+					playableCards.length > 0 &&
+					cpu.stone >= MONSTER_PLACEMENT_COST
+				) {
 					const bestCard = selectBestCard(playableCards);
 					const bestPosition = findBestPosition(emptyCells);
 
 					// カードを配置
 					const cell = cpu.fieldGrid[bestPosition.row][bestPosition.col];
 					if (!cell.card) {
-						cpu.stone -= 1;
+						cpu.stone -= MONSTER_PLACEMENT_COST;
 						cell.card = bestCard as MonsterCard;
 						cell.isWaiting = true;
 						cpu.hand = cpu.hand.filter((c) => c.id !== bestCard.id);
@@ -338,12 +365,16 @@ export const gameStateMachine = setup({
 			if (event.type === 'PLACE_CARD') {
 				const currentPlayerObj = context.players[context.currentPlayer];
 				const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-				return !cell.card && event.card.type === 'monster' && currentPlayerObj.stone >= 1;
+				return (
+					!cell.card &&
+					event.card.type === 'monster' &&
+					currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+				);
 			}
 			return false;
 		},
-		isPlayerTurn: ({ context }) => context.currentPlayer === 0,
-		isCpuTurn: ({ context }) => context.currentPlayer === 1
+		isPlayerTurn: ({ context }) => context.currentPlayer === PLAYER_TURN_INDEX,
+		isCpuTurn: ({ context }) => context.currentPlayer === CPU_TURN_INDEX
 	}
 }).createMachine({
 	id: 'cardGame',
@@ -374,7 +405,7 @@ export const gameStateMachine = setup({
 		cpuTurn: {
 			entry: 'cpuAction',
 			after: {
-				2000: {
+				[CPU_ACTION_DELAY]: {
 					target: 'playerTurn',
 					actions: ['switchTurn', 'updateWaitingStatus']
 				}
