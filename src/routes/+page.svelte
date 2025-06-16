@@ -65,18 +65,6 @@
 			{/each}
 		</div>
 
-		<!-- ターンエンドボタン -->
-		{#if currentPlayer === 0}
-			<div class="mb-8 text-center">
-				<button
-					onclick={endTurn}
-					onkeydown={(e) => e.key === 'Enter' && endTurn()}
-					class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
-				>
-					ターンエンド
-				</button>
-			</div>
-		{/if}
 	</div>
 
 	<!-- フィールド（盤面＋プレイヤーイメージ） -->
@@ -142,6 +130,17 @@
 	<!-- 手札表示エリア -->
 	<div class="mt-auto bg-gray-200 py-4">
 		<div class="mx-auto max-w-4xl px-4">
+			<!-- ターンエンドボタン -->
+			<div class="mb-4 text-center {currentPlayer !== 0 ? 'invisible' : ''}">
+				<button
+					onclick={endTurn}
+					onkeydown={(e) => e.key === 'Enter' && endTurn()}
+					class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
+					disabled={currentPlayer !== 0}
+				>
+					ターンエンド
+				</button>
+			</div>
 			<h2 class="mb-4 text-xl font-bold">手札</h2>
 			<div class="flex gap-4 overflow-x-auto p-4">
 				{#each players[0].hand as card}
@@ -163,9 +162,9 @@
 							<div class="space-y-2">
 								{#each card.commands as command}
 									<div class="bg-opacity-50 rounded bg-white p-2">
-										<p class="text-sm">ストーン: {command.stoneCost}</p>
-										<p class="text-sm">ダメージ: {command.damage}</p>
-										<p class="text-xs">{command.description}</p>
+										<p class="text-sm">{command.description}</p>
+										<p class="text-xs">ストーン: {command.stoneCost}</p>
+										<p class="text-xs">ダメージ: {command.damage}</p>
 									</div>
 								{/each}
 							</div>

@@ -4,8 +4,8 @@ import { CARD_MASTER } from './cardMaster.ts';
 // ゲーム定数
 export const MONSTER_PLACEMENT_COST = 1;
 export const FIELD_GRID_SIZE = 2;
-export const INITIAL_PLAYER_HP = 20;
-export const INITIAL_PLAYER_STONE = 10;
+export const INITIAL_PLAYER_HP = 2;
+export const INITIAL_PLAYER_STONE = 5;
 export const CPU_ACTION_DELAY = 2000;
 export const PLAYER_1_ID = 1;
 export const PLAYER_2_ID = 2;
@@ -111,12 +111,15 @@ function createCardInstance(master: CardMaster): Card {
 
 // サンプルカードの作成
 function createSampleCards(): Card[] {
-	return [
-		createCardInstance(CARD_MASTER[0]),
-		createCardInstance(CARD_MASTER[0]),
-		createCardInstance(CARD_MASTER[0]),
-		createCardInstance(CARD_MASTER[0])
-	];
+	const SAMPLE_CARD_COUNT = 4;
+	const cards: Card[] = [];
+	
+	for (let i = 0; i < SAMPLE_CARD_COUNT; i++) {
+		const randomMaster = CARD_MASTER[Math.floor(Math.random() * CARD_MASTER.length)];
+		cards.push(createCardInstance(randomMaster));
+	}
+	
+	return cards;
 }
 
 // 初期状態の作成
