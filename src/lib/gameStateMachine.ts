@@ -20,7 +20,8 @@ export interface MonsterCommand {
 	description: string;
 }
 
-export interface MonsterCard {
+// カードマスター（テンプレート）の型定義
+export interface MonsterCardMaster {
 	id: number;
 	type: 'monster';
 	name: string;
@@ -28,12 +29,23 @@ export interface MonsterCard {
 	commands: MonsterCommand[];
 }
 
-export interface MagicCard {
+export interface MagicCardMaster {
 	id: number;
 	type: 'magic';
 	name: string;
 	stoneCost: number;
 	description: string;
+}
+
+export type CardMaster = MonsterCardMaster | MagicCardMaster;
+
+// カードインスタンス（実際のゲーム内での使用）の型定義
+export interface MonsterCard extends MonsterCardMaster {
+	instanceId: string;
+}
+
+export interface MagicCard extends MagicCardMaster {
+	instanceId: string;
 }
 
 export type Card = MonsterCard | MagicCard;
@@ -89,9 +101,22 @@ function createEmptyFieldGrid(): FieldGrid {
 	return grid;
 }
 
+// カードマスターからインスタンスを作成するヘルパー関数
+function createCardInstance(master: CardMaster): Card {
+	return {
+		...master,
+		instanceId: crypto.randomUUID()
+	};
+}
+
 // サンプルカードの作成
 function createSampleCards(): Card[] {
-	return [CARD_MASTER[0], CARD_MASTER[0], CARD_MASTER[0], CARD_MASTER[0]];
+	return [
+		createCardInstance(CARD_MASTER[0]),
+		createCardInstance(CARD_MASTER[0]),
+		createCardInstance(CARD_MASTER[0]),
+		createCardInstance(CARD_MASTER[0])
+	];
 }
 
 // 初期状態の作成
@@ -132,6 +157,9 @@ function createInitialContext(customDeck?: Card[]): GameContext {
 interface GameStateMachineOptions {
 	customDeck?: Card[];
 }
+
+// カードインスタンス作成を外部からも利用可能にする
+export { createCardInstance };
 
 export const gameStateMachine = (options?: GameStateMachineOptions) =>
 	setup({
@@ -179,7 +207,7 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 
 						// 手札からカードを削除
 						newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
-							(c) => c.id !== event.card.id
+							(c) => c.instanceId !== event.card.instanceId
 						);
 
 						// 配置成功時は両方の選択状態をクリア
@@ -222,7 +250,7 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 
 						// 手札からカードを削除
 						newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
-							(c) => c.id !== context.selectedCard!.id
+							(c) => c.instanceId !== context.selectedCard!.instanceId
 						);
 
 						// 配置成功時は両方の選択状態をクリア
@@ -265,7 +293,9 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 							cell.isWaiting = true;
 
 							// 手札からカードを削除
-							currentPlayerObj.hand = currentPlayerObj.hand.filter((c) => c.id !== event.card.id);
+							currentPlayerObj.hand = currentPlayerObj.hand.filter(
+								(c) => c.instanceId !== event.card.instanceId
+							);
 						}
 						return newPlayers;
 					}
@@ -324,7 +354,7 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 							cpu.stone -= MONSTER_PLACEMENT_COST;
 							cell.card = bestCard as MonsterCard;
 							cell.isWaiting = true;
-							cpu.hand = cpu.hand.filter((c) => c.id !== bestCard.id);
+							cpu.hand = cpu.hand.filter((c) => c.instanceId !== bestCard.instanceId);
 						}
 
 						emptyCells.splice(emptyCells.indexOf(bestPosition), 1);

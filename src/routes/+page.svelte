@@ -148,8 +148,8 @@
 					<div
 						class="h-64 w-48 flex-shrink-0 {getCardBackgroundColor(
 							card
-						)} cursor-pointer rounded-lg p-4 shadow-lg transition-transform hover:scale-105 {selectedCard?.id ===
-						card.id
+						)} cursor-pointer rounded-lg p-4 shadow-lg transition-transform hover:scale-105 {selectedCard?.instanceId ===
+						card.instanceId
 							? 'ring-4 ring-blue-500'
 							: ''}"
 						onclick={() => selectCard(card)}

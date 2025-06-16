@@ -18,6 +18,7 @@ function createEmptyFieldGrid(): FieldGrid {
 function createSampleMonsterCard(id: number = 1): MonsterCard {
 	return {
 		id,
+		instanceId: crypto.randomUUID(),
 		type: 'monster',
 		name: 'テストモンスター',
 		hp: 5,

@@ -10,6 +10,7 @@ import {
 const testDeck: Card[] = [
 	{
 		id: 100,
+		instanceId: crypto.randomUUID(),
 		type: 'monster',
 		name: 'テストスライム',
 		hp: 10,
@@ -17,6 +18,7 @@ const testDeck: Card[] = [
 	},
 	{
 		id: 101,
+		instanceId: crypto.randomUUID(),
 		type: 'magic',
 		name: 'テストファイア',
 		stoneCost: 2,

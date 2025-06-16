@@ -1,7 +1,7 @@
-import type { Card } from './gameStateMachine.ts';
+import type { CardMaster } from './gameStateMachine.ts';
 
 // カードマスターデータ
-export const CARD_MASTER: Card[] = [
+export const CARD_MASTER: CardMaster[] = [
 	{
 		id: 1,
 		type: 'monster',
