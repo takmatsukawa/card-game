@@ -156,8 +156,12 @@ describe('ゲーム状態機械', () => {
 			const initialStone = context.players[0].stone;
 
 			actor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard,
+				type: 'SELECT_CARD',
+				card: monsterCard
+			});
+
+			actor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -182,8 +186,12 @@ describe('ゲーム状態機械', () => {
 			const initialFieldState = JSON.parse(JSON.stringify(context.players[0].fieldGrid));
 
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: magicCard,
+				type: 'SELECT_CARD',
+				card: magicCard
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -206,8 +214,12 @@ describe('ゲーム状態機械', () => {
 			const initialStone = context.players[0].stone;
 
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: testMonster,
+				type: 'SELECT_CARD',
+				card: testMonster
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -235,8 +247,12 @@ describe('ゲーム状態機械', () => {
 
 			// 最初のカードを配置
 			testActor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard1,
+				type: 'SELECT_CARD',
+				card: monsterCard1
+			});
+
+			testActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -247,8 +263,12 @@ describe('ゲーム状態機械', () => {
 
 			// 同じセルに2枚目のカードを配置しようとする
 			testActor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard2,
+				type: 'SELECT_CARD',
+				card: monsterCard2
+			});
+
+			testActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -274,8 +294,12 @@ describe('ゲーム状態機械', () => {
 			const initialFieldState = JSON.parse(JSON.stringify(initialContext.players[0].fieldGrid));
 
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: testMonster,
+				type: 'SELECT_CARD',
+				card: testMonster
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -303,8 +327,12 @@ describe('ゲーム状態機械', () => {
 			const initialFieldState = JSON.parse(JSON.stringify(initialContext.players[0].fieldGrid));
 
 			testActor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard,
+				type: 'SELECT_CARD',
+				card: monsterCard
+			});
+
+			testActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -352,8 +380,12 @@ describe('ゲーム状態機械', () => {
 			) as MonsterCard;
 
 			testActor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard,
+				type: 'SELECT_CARD',
+				card: monsterCard
+			});
+
+			testActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -372,8 +404,12 @@ describe('ゲーム状態機械', () => {
 				(card: Card) => card.type === 'monster'
 			) as MonsterCard;
 			testActor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard,
+				type: 'SELECT_CARD',
+				card: monsterCard
+			});
+
+			testActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -410,8 +446,12 @@ describe('ゲーム状態機械', () => {
 				(card: Card) => card.type === 'monster'
 			) as MonsterCard;
 			testActor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard,
+				type: 'SELECT_CARD',
+				card: monsterCard
+			});
+
+			testActor.send({
+				type: 'SELECT_CELL',
 				row: 0,
 				col: 0
 			});
@@ -449,8 +489,12 @@ describe('ゲーム状態機械', () => {
 				.context.players[0].hand.find((card) => card.type === 'monster') as MonsterCard;
 
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: monsterCard,
+				type: 'SELECT_CARD',
+				card: monsterCard
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 1, // 後衛
 				col: 0
 			});
@@ -481,15 +525,23 @@ describe('ゲーム状態機械', () => {
 
 			// 前衛と後衛にモンスターを配置
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: monsters[0],
+				type: 'SELECT_CARD',
+				card: monsters[0]
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 0, // 前衛
 				col: 0
 			});
 
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: monsters[1],
+				type: 'SELECT_CARD',
+				card: monsters[1]
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 1, // 後衛
 				col: 0
 			});
@@ -520,15 +572,23 @@ describe('ゲーム状態機械', () => {
 
 			// 両方の後衛にモンスターを配置
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: monsters[0],
+				type: 'SELECT_CARD',
+				card: monsters[0]
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 1, // 後衛
 				col: 0
 			});
 
 			customActor.send({
-				type: 'PLACE_CARD',
-				card: monsters[1],
+				type: 'SELECT_CARD',
+				card: monsters[1]
+			});
+
+			customActor.send({
+				type: 'SELECT_CELL',
 				row: 1, // 後衛
 				col: 1
 			});

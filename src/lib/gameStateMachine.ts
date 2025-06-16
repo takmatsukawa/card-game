@@ -89,7 +89,6 @@ export type GameEvent =
 	| { type: 'END_TURN' }
 	| { type: 'CPU_ACTION_COMPLETE' }
 	| { type: 'RESET_SELECTION' }
-	| { type: 'PLACE_CARD'; card: Card; row: number; col: number }
 	| { type: 'ATTACK'; attackerId: string; targetId: string }
 	| { type: 'GAME_OVER'; winner: number };
 
@@ -287,36 +286,6 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 				selectedCell: null,
 				selectedMonster: null
 			}),
-			placeCard: assign({
-				players: ({ context, event }) => {
-					if (event.type === 'PLACE_CARD') {
-						const newPlayers = [...context.players];
-						const currentPlayerObj = newPlayers[context.currentPlayer];
-						const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-
-						if (
-							!cell.card &&
-							event.card.type === 'monster' &&
-							currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
-						) {
-							// ストーンを消費してモンスターを配置
-							currentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
-							cell.card = event.card as MonsterCard;
-							cell.isWaiting = true;
-
-							// 手札からカードを削除
-							currentPlayerObj.hand = currentPlayerObj.hand.filter(
-								(c) => c.instanceId !== event.card.instanceId
-							);
-						}
-						return newPlayers;
-					}
-					return context.players;
-				},
-				selectedCard: null,
-				selectedCell: null,
-				selectedMonster: null
-			}),
 			switchTurn: assign({
 				currentPlayer: ({ context }) => (context.currentPlayer + 1) % TOTAL_PLAYERS,
 				selectedCard: null,
@@ -435,18 +404,6 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 			})
 		},
 		guards: {
-			canPlaceCard: ({ context, event }) => {
-				if (event.type === 'PLACE_CARD') {
-					const currentPlayerObj = context.players[context.currentPlayer];
-					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-					return (
-						!cell.card &&
-						event.card.type === 'monster' &&
-						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
-					);
-				}
-				return false;
-			},
 			canPlaceCardOnSelectedCell: ({ context, event }) => {
 				if (event.type === 'SELECT_CELL' && context.selectedCard) {
 					const currentPlayerObj = context.players[context.currentPlayer];
@@ -520,10 +477,6 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 							actions: 'selectEmptyCell'
 						}
 					],
-					PLACE_CARD: {
-						guard: 'canPlaceCard',
-						actions: 'placeCard'
-					},
 					ATTACK: {
 						guard: 'canAttack',
 						actions: 'executeAttack'
