@@ -35,13 +35,7 @@
 
 	// マスを選択する関数
 	function selectCell(row: number, col: number) {
-		// 自分のモンスターがいるマスをクリックした場合、モンスターを選択
-		const cell = players[0].fieldGrid[row][col];
-		if (cell.card && currentPlayer === 0) {
-			send({ type: 'SELECT_MONSTER', monster: cell.card });
-		} else {
-			send({ type: 'SELECT_CELL', row, col });
-		}
+		send({ type: 'SELECT_CELL', row, col });
 	}
 </script>
 

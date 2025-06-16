@@ -86,7 +86,6 @@ export interface GameContext {
 export type GameEvent =
 	| { type: 'SELECT_CARD'; card: Card }
 	| { type: 'SELECT_CELL'; row: number; col: number }
-	| { type: 'SELECT_MONSTER'; monster: MonsterCard }
 	| { type: 'END_TURN' }
 	| { type: 'CPU_ACTION_COMPLETE' }
 	| { type: 'RESET_SELECTION' }
@@ -238,68 +237,50 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 
 				return {};
 			}),
-			selectCellAndPlaceIfCardSelected: assign(({ context, event }) => {
+			placeCardOnCell: assign(({ context, event }) => {
 				if (event.type === 'SELECT_CELL' && context.selectedCard) {
-					const currentPlayerObj = context.players[context.currentPlayer];
-					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+					const newPlayers = [...context.players];
+					const newCurrentPlayerObj = newPlayers[context.currentPlayer];
+					const newCell = newCurrentPlayerObj.fieldGrid[event.row][event.col];
 
-					// カード配置が可能な場合
-					if (
-						!cell.card &&
-						context.selectedCard.type === 'monster' &&
-						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
-					) {
-						const newPlayers = [...context.players];
-						const newCurrentPlayerObj = newPlayers[context.currentPlayer];
-						const newCell = newCurrentPlayerObj.fieldGrid[event.row][event.col];
+					// ストーンを消費してモンスターを配置
+					newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
+					newCell.card = context.selectedCard as MonsterCard;
+					newCell.isWaiting = true;
 
-						// ストーンを消費してモンスターを配置
-						newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
-						newCell.card = context.selectedCard as MonsterCard;
-						newCell.isWaiting = true;
+					// 手札からカードを削除
+					newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
+						(c) => c.instanceId !== context.selectedCard!.instanceId
+					);
 
-						// 手札からカードを削除
-						newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
-							(c) => c.instanceId !== context.selectedCard!.instanceId
-						);
-
-						// 配置成功時は選択状態をクリア
-						return {
-							players: newPlayers,
-							selectedCard: null,
-							selectedCell: null,
-							selectedMonster: null
-						};
-					}
+					return {
+						players: newPlayers,
+						selectedCard: null,
+						selectedCell: null,
+						selectedMonster: null
+					};
 				}
-
-				// カード配置しない場合は通常のセル選択
+				return {};
+			}),
+			selectMonsterOnCell: assign(({ context, event }) => {
 				if (event.type === 'SELECT_CELL') {
 					const currentPlayerObj = context.players[context.currentPlayer];
 					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-
-					// 空のセルをクリックした場合、モンスター選択状態を解除
-					if (!cell.card) {
-						return {
-							selectedCell: { row: event.row, col: event.col },
-							selectedMonster: null
-						};
-					}
-
 					return {
-						selectedCell: { row: event.row, col: event.col }
+						selectedCell: { row: event.row, col: event.col },
+						selectedMonster: cell.card
 					};
 				}
-
 				return {};
 			}),
-			selectMonster: assign({
-				selectedMonster: ({ event }) => {
-					if (event.type === 'SELECT_MONSTER') {
-						return event.monster;
-					}
-					return null;
+			selectEmptyCell: assign(({ event }) => {
+				if (event.type === 'SELECT_CELL') {
+					return {
+						selectedCell: { row: event.row, col: event.col },
+						selectedMonster: null
+					};
 				}
+				return {};
 			}),
 			resetSelection: assign({
 				selectedCard: null,
@@ -466,6 +447,34 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 				}
 				return false;
 			},
+			canPlaceCardOnSelectedCell: ({ context, event }) => {
+				if (event.type === 'SELECT_CELL' && context.selectedCard) {
+					const currentPlayerObj = context.players[context.currentPlayer];
+					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+					return (
+						!cell.card &&
+						context.selectedCard.type === 'monster' &&
+						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+					);
+				}
+				return false;
+			},
+			hasMonsterOnCell: ({ context, event }) => {
+				if (event.type === 'SELECT_CELL') {
+					const currentPlayerObj = context.players[context.currentPlayer];
+					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+					return cell.card !== null && context.currentPlayer === 0;
+				}
+				return false;
+			},
+			isEmptyCell: ({ context, event }) => {
+				if (event.type === 'SELECT_CELL') {
+					const currentPlayerObj = context.players[context.currentPlayer];
+					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+					return cell.card === null;
+				}
+				return false;
+			},
 			canAttack: ({ context, event }) => {
 				if (event.type === 'ATTACK') {
 					const attacker = findMonsterById(context.players, event.attackerId);
@@ -497,12 +506,20 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 					SELECT_CARD: {
 						actions: 'selectCardAndPlaceIfCellSelected'
 					},
-					SELECT_CELL: {
-						actions: 'selectCellAndPlaceIfCardSelected'
-					},
-					SELECT_MONSTER: {
-						actions: 'selectMonster'
-					},
+					SELECT_CELL: [
+						{
+							guard: 'canPlaceCardOnSelectedCell',
+							actions: 'placeCardOnCell'
+						},
+						{
+							guard: 'hasMonsterOnCell',
+							actions: 'selectMonsterOnCell'
+						},
+						{
+							guard: 'isEmptyCell',
+							actions: 'selectEmptyCell'
+						}
+					],
 					PLACE_CARD: {
 						guard: 'canPlaceCard',
 						actions: 'placeCard'
