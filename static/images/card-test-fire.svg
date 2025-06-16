@@ -1,0 +1,27 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Magic Effect Illustration Only -->
+  <g transform="translate(40, 40)">
+    <!-- Flame base -->
+    <ellipse cx="0" cy="20" rx="25" ry="8" fill="#fbbf24" opacity="0.6"/>
+    
+    <!-- Main flame -->
+    <path d="M 0 20 Q -20 10 -15 -10 Q -10 -25 0 -30 Q 10 -25 15 -10 Q 20 10 0 20" fill="#ef4444"/>
+    
+    <!-- Inner flame -->
+    <path d="M 0 15 Q -12 8 -10 -5 Q -5 -18 0 -22 Q 5 -18 10 -5 Q 12 8 0 15" fill="#f97316"/>
+    
+    <!-- Core flame -->
+    <path d="M 0 10 Q -8 5 -6 -2 Q -3 -12 0 -15 Q 3 -12 6 -2 Q 8 5 0 10" fill="#fbbf24"/>
+    
+    <!-- Sparks -->
+    <circle cx="-25" cy="-5" r="2" fill="#fbbf24"/>
+    <circle cx="28" cy="-8" r="1.5" fill="#f97316"/>
+    <circle cx="-18" cy="-20" r="1" fill="#ef4444"/>
+    <circle cx="22" cy="-15" r="1.5" fill="#fbbf24"/>
+    <circle cx="5" cy="-35" r="1" fill="#f97316"/>
+    
+    <!-- Magic circles -->
+    <circle cx="0" cy="0" r="35" fill="none" stroke="#7c3aed" stroke-width="1" opacity="0.3"/>
+    <circle cx="0" cy="0" r="28" fill="none" stroke="#a855f7" stroke-width="1" opacity="0.4"/>
+  </g>
+</svg>

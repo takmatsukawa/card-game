@@ -27,6 +27,7 @@ export interface MonsterCardMaster {
 	name: string;
 	hp: number;
 	commands: MonsterCommand[];
+	image: string;
 }
 
 export interface MagicCardMaster {
@@ -35,6 +36,7 @@ export interface MagicCardMaster {
 	name: string;
 	stoneCost: number;
 	description: string;
+	image: string;
 }
 
 export type CardMaster = MonsterCardMaster | MagicCardMaster;
@@ -113,12 +115,12 @@ function createCardInstance(master: CardMaster): Card {
 function createSampleCards(): Card[] {
 	const SAMPLE_CARD_COUNT = 4;
 	const cards: Card[] = [];
-	
+
 	for (let i = 0; i < SAMPLE_CARD_COUNT; i++) {
 		const randomMaster = CARD_MASTER[Math.floor(Math.random() * CARD_MASTER.length)];
 		cards.push(createCardInstance(randomMaster));
 	}
-	
+
 	return cards;
 }
 

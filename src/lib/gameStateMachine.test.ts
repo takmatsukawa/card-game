@@ -467,93 +467,85 @@ describe('ゲーム状態機械', () => {
 			});
 		});
 
-		it(
-			'前衛にモンスターがいる場合は後衛のモンスターは移動しない',
-			() => {
-				const customActor = createGameActor({ customDeck: testDeck });
-				customActor.start();
+		it('前衛にモンスターがいる場合は後衛のモンスターは移動しない', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
 
-				const monsters = customActor
-					.getSnapshot()
-					.context.players[0].hand.filter((card) => card.type === 'monster') as MonsterCard[];
+			const monsters = customActor
+				.getSnapshot()
+				.context.players[0].hand.filter((card) => card.type === 'monster') as MonsterCard[];
 
-				// 前衛と後衛にモンスターを配置
-				customActor.send({
-					type: 'PLACE_CARD',
-					card: monsters[0],
-					row: 0, // 前衛
-					col: 0
-				});
+			// 前衛と後衛にモンスターを配置
+			customActor.send({
+				type: 'PLACE_CARD',
+				card: monsters[0],
+				row: 0, // 前衛
+				col: 0
+			});
 
-				customActor.send({
-					type: 'PLACE_CARD',
-					card: monsters[1],
-					row: 1, // 後衛
-					col: 0
-				});
+			customActor.send({
+				type: 'PLACE_CARD',
+				card: monsters[1],
+				row: 1, // 後衛
+				col: 0
+			});
 
-				// ターンを終了して次のターンを開始
-				customActor.send({ type: 'END_TURN' });
+			// ターンを終了して次のターンを開始
+			customActor.send({ type: 'END_TURN' });
 
-				// CPUターンの後、プレイヤーターンに戻る
-				return new Promise<void>((resolve) => {
-					setTimeout(() => {
-						const context = customActor.getSnapshot().context;
+			// CPUターンの後、プレイヤーターンに戻る
+			return new Promise<void>((resolve) => {
+				setTimeout(() => {
+					const context = customActor.getSnapshot().context;
 
-						// 前衛と後衛のモンスターが変わらないことを確認
-						expect(context.players[0].fieldGrid[0][0].card).toBe(monsters[0]);
-						expect(context.players[0].fieldGrid[1][0].card).toBe(monsters[1]);
-						resolve();
-					}, 2200);
-				});
-			},
-			7000
-		);
+					// 前衛と後衛のモンスターが変わらないことを確認
+					expect(context.players[0].fieldGrid[0][0].card).toBe(monsters[0]);
+					expect(context.players[0].fieldGrid[1][0].card).toBe(monsters[1]);
+					resolve();
+				}, 2200);
+			});
+		}, 7000);
 
-		it(
-			'複数列の後衛モンスターが同時に前進できる',
-			() => {
-				const customActor = createGameActor({ customDeck: testDeck });
-				customActor.start();
+		it('複数列の後衛モンスターが同時に前進できる', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
 
-				const monsters = customActor
-					.getSnapshot()
-					.context.players[0].hand.filter((card) => card.type === 'monster') as MonsterCard[];
+			const monsters = customActor
+				.getSnapshot()
+				.context.players[0].hand.filter((card) => card.type === 'monster') as MonsterCard[];
 
-				// 両方の後衛にモンスターを配置
-				customActor.send({
-					type: 'PLACE_CARD',
-					card: monsters[0],
-					row: 1, // 後衛
-					col: 0
-				});
+			// 両方の後衛にモンスターを配置
+			customActor.send({
+				type: 'PLACE_CARD',
+				card: monsters[0],
+				row: 1, // 後衛
+				col: 0
+			});
 
-				customActor.send({
-					type: 'PLACE_CARD',
-					card: monsters[1],
-					row: 1, // 後衛
-					col: 1
-				});
+			customActor.send({
+				type: 'PLACE_CARD',
+				card: monsters[1],
+				row: 1, // 後衛
+				col: 1
+			});
 
-				// ターンを終了して次のターンを開始
-				customActor.send({ type: 'END_TURN' });
+			// ターンを終了して次のターンを開始
+			customActor.send({ type: 'END_TURN' });
 
-				// CPUターンの後、プレイヤーターンに戻る
-				return new Promise<void>((resolve) => {
-					setTimeout(() => {
-						const context = customActor.getSnapshot().context;
+			// CPUターンの後、プレイヤーターンに戻る
+			return new Promise<void>((resolve) => {
+				setTimeout(() => {
+					const context = customActor.getSnapshot().context;
 
-						// 両方の前衛にモンスターが移動していることを確認
-						expect(context.players[0].fieldGrid[0][0].card).toBe(monsters[0]);
-						expect(context.players[0].fieldGrid[0][1].card).toBe(monsters[1]);
-						expect(context.players[0].fieldGrid[1][0].card).toBe(null);
-						expect(context.players[0].fieldGrid[1][1].card).toBe(null);
-						resolve();
-					}, 2200);
-				});
-			},
-			7000
-		);
+					// 両方の前衛にモンスターが移動していることを確認
+					expect(context.players[0].fieldGrid[0][0].card).toBe(monsters[0]);
+					expect(context.players[0].fieldGrid[0][1].card).toBe(monsters[1]);
+					expect(context.players[0].fieldGrid[1][0].card).toBe(null);
+					expect(context.players[0].fieldGrid[1][1].card).toBe(null);
+					resolve();
+				}, 2200);
+			});
+		}, 7000);
 
 		it('CPUのモンスターも自動前進する', () => {
 			const customActor = createGameActor({ customDeck: testDeck });

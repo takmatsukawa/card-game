@@ -1,0 +1,25 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Character Illustration Only -->
+  <g transform="translate(40, 40)">
+    <!-- Body (cute slime-like creature) -->
+    <ellipse cx="0" cy="0" rx="30" ry="28" fill="#60a5fa"/>
+    <ellipse cx="0" cy="-5" rx="25" ry="22" fill="#93c5fd"/>
+    
+    <!-- Eyes -->
+    <circle cx="-10" cy="-8" r="4" fill="white"/>
+    <circle cx="10" cy="-8" r="4" fill="white"/>
+    <circle cx="-9" cy="-8" r="2" fill="black"/>
+    <circle cx="11" cy="-8" r="2" fill="black"/>
+    
+    <!-- Mouth -->
+    <path d="M -6 2 Q 0 8 6 2" stroke="black" stroke-width="1.5" fill="none"/>
+    
+    <!-- Horn/Antenna -->
+    <circle cx="0" cy="-28" r="3" fill="#fbbf24"/>
+    <line x1="0" y1="-25" x2="0" y2="-18" stroke="#fbbf24" stroke-width="2"/>
+    
+    <!-- Arms -->
+    <circle cx="-22" cy="5" r="8" fill="#60a5fa"/>
+    <circle cx="22" cy="5" r="8" fill="#60a5fa"/>
+  </g>
+</svg>

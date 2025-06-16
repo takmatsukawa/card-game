@@ -1,0 +1,27 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Character Illustration Only -->
+  <g transform="translate(40, 40)">
+    <!-- Main body (larger slime) -->
+    <ellipse cx="0" cy="0" rx="35" ry="32" fill="#10b981"/>
+    <ellipse cx="0" cy="-8" rx="28" ry="25" fill="#34d399"/>
+    
+    <!-- Slime texture bubbles -->
+    <circle cx="-15" cy="-2" r="3" fill="#6ee7b7" opacity="0.7"/>
+    <circle cx="12" cy="8" r="2" fill="#6ee7b7" opacity="0.7"/>
+    <circle cx="0" cy="12" r="2.5" fill="#6ee7b7" opacity="0.7"/>
+    
+    <!-- Eyes -->
+    <circle cx="-12" cy="-12" r="5" fill="white"/>
+    <circle cx="12" cy="-12" r="5" fill="white"/>
+    <circle cx="-10" cy="-12" r="3" fill="black"/>
+    <circle cx="14" cy="-12" r="3" fill="black"/>
+    
+    <!-- Mouth -->
+    <path d="M -8 0 Q 0 6 8 0" stroke="black" stroke-width="2" fill="none"/>
+    
+    <!-- Slime drips -->
+    <ellipse cx="-25" cy="15" rx="4" ry="8" fill="#10b981"/>
+    <ellipse cx="28" cy="18" rx="3" ry="6" fill="#10b981"/>
+    <ellipse cx="0" cy="25" rx="5" ry="7" fill="#10b981"/>
+  </g>
+</svg>

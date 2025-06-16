@@ -1,0 +1,38 @@
+<svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Character Illustration Only -->
+  <g transform="translate(40, 40)">
+    <!-- Body (large and muscular) -->
+    <ellipse cx="0" cy="8" rx="25" ry="28" fill="#65a30d"/>
+    
+    <!-- Head -->
+    <circle cx="0" cy="-18" r="22" fill="#65a30d"/>
+    
+    <!-- Tusks -->
+    <ellipse cx="-12" cy="-8" rx="3" ry="8" fill="white" transform="rotate(-10)"/>
+    <ellipse cx="12" cy="-8" rx="3" ry="8" fill="white" transform="rotate(10)"/>
+    
+    <!-- Eyes -->
+    <circle cx="-10" cy="-22" r="4" fill="red"/>
+    <circle cx="10" cy="-22" r="4" fill="red"/>
+    <circle cx="-9" cy="-22" r="2" fill="black"/>
+    <circle cx="11" cy="-22" r="2" fill="black"/>
+    
+    <!-- Nose -->
+    <ellipse cx="0" cy="-15" rx="3" ry="2" fill="#4d7c0f"/>
+    
+    <!-- Mouth -->
+    <path d="M -8 -10 Q 0 -5 8 -10" stroke="black" stroke-width="2" fill="none"/>
+    
+    <!-- Arms (muscular) -->
+    <ellipse cx="-28" cy="-5" rx="8" ry="20" fill="#65a30d"/>
+    <ellipse cx="28" cy="-5" rx="8" ry="20" fill="#65a30d"/>
+    
+    <!-- Hands/Fists -->
+    <circle cx="-30" cy="12" r="6" fill="#65a30d"/>
+    <circle cx="30" cy="12" r="6" fill="#65a30d"/>
+    
+    <!-- Armor pieces -->
+    <rect x="-15" y="-5" width="30" height="8" rx="2" fill="#78716c"/>
+    <rect x="-20" y="15" width="40" height="6" rx="2" fill="#78716c"/>
+  </g>
+</svg>

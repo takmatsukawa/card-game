@@ -64,7 +64,6 @@
 				</div>
 			{/each}
 		</div>
-
 	</div>
 
 	<!-- フィールド（盤面＋プレイヤーイメージ） -->
@@ -157,6 +156,16 @@
 						tabindex="0"
 					>
 						<h3 class="mb-2 text-lg font-bold">{card.name}</h3>
+
+						<!-- Card Image -->
+						<div class="mb-3 flex justify-center">
+							<img
+								src="/images/{card.image}"
+								alt={card.name}
+								class="h-20 w-16 rounded object-cover"
+							/>
+						</div>
+
 						{#if card.type === 'monster'}
 							<p class="mb-2">HP: {card.hp}</p>
 							<div class="space-y-2">
