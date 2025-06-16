@@ -26,7 +26,7 @@ describe('ゲーム状態機械', () => {
 			expect(context.players[1].id).toBe(2);
 		});
 
-		it('各プレイヤーのHPが20、マナが10で初期化される', () => {
+		it('各プレイヤーのHPが20、ストーンが10で初期化される', () => {
 			const context = actor.getSnapshot().context;
 			expect(context.players[0].hp).toBe(20);
 			expect(context.players[0].stone).toBe(10);
@@ -170,12 +170,12 @@ describe('ゲーム状態機械', () => {
 			expect(newContext.players[0].hand.length).toBe(initialContext.players[0].hand.length);
 		});
 
-		it('マナが不足している場合は配置できない', () => {
-			// 新しいアクターを作成してマナを直接設定
+		it('ストーンが不足している場合は配置できない', () => {
+			// 新しいアクターを作成してストーンを直接設定
 			const testActor = createGameActor();
 			testActor.start();
 
-			// アクターのコンテキストを取得し、マナを0に設定
+			// アクターのコンテキストを取得し、ストーンを0に設定
 			const initialContext = testActor.getSnapshot().context;
 			initialContext.players[0].stone = 0;
 
