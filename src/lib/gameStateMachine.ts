@@ -18,6 +18,7 @@ export interface MonsterCommand {
 	stoneCost: number;
 	damage: number;
 	description: string;
+	attackRange: number;
 }
 
 // カードマスター（テンプレート）の型定義
@@ -400,6 +401,29 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 
 					return newPlayers;
 				}
+			}),
+			executeAttack: assign({
+				players: ({ context, event }) => {
+					if (event.type === 'ATTACK') {
+						const newPlayers = [...context.players];
+						const attacker = findMonsterById(newPlayers, event.attackerId);
+						const target = findMonsterById(newPlayers, event.targetId);
+
+						if (attacker && target) {
+							// 攻撃実行
+							const damage = attacker.commands[0].damage; // 最初のコマンドのダメージを使用
+							target.hp -= damage;
+
+							// HPが0以下になったモンスターを削除
+							if (target.hp <= 0) {
+								removeMonsterFromField(newPlayers, event.targetId);
+							}
+						}
+
+						return newPlayers;
+					}
+					return context.players;
+				}
 			})
 		},
 		guards: {
@@ -412,6 +436,23 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 						event.card.type === 'monster' &&
 						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
 					);
+				}
+				return false;
+			},
+			canAttack: ({ context, event }) => {
+				if (event.type === 'ATTACK') {
+					const attacker = findMonsterById(context.players, event.attackerId);
+					const target = findMonsterById(context.players, event.targetId);
+
+					if (!attacker || !target) return false;
+
+					const attackerPosition = findMonsterPosition(context.players, event.attackerId);
+					const targetPosition = findMonsterPosition(context.players, event.targetId);
+
+					if (!attackerPosition || !targetPosition) return false;
+
+					const attackRange = attacker.commands[0].attackRange;
+					return isInAttackRange(attackerPosition, targetPosition, attackRange);
 				}
 				return false;
 			},
@@ -435,6 +476,10 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 					PLACE_CARD: {
 						guard: 'canPlaceCard',
 						actions: 'placeCard'
+					},
+					ATTACK: {
+						guard: 'canAttack',
+						actions: 'executeAttack'
 					},
 					RESET_SELECTION: {
 						actions: 'resetSelection'
@@ -490,6 +535,85 @@ function findBestPosition(emptyCells: { row: number; col: number }[]): {
 	col: number;
 } {
 	return emptyCells[0];
+}
+
+function findMonsterById(players: Player[], monsterId: string): MonsterCard | null {
+	for (const player of players) {
+		for (let row = 0; row < player.fieldGrid.length; row++) {
+			for (let col = 0; col < player.fieldGrid[row].length; col++) {
+				const card = player.fieldGrid[row][col].card;
+				if (card && card.instanceId === monsterId) {
+					return card;
+				}
+			}
+		}
+	}
+	return null;
+}
+
+function findMonsterPosition(
+	players: Player[],
+	monsterId: string
+): { playerId: number; row: number; col: number } | null {
+	for (let playerId = 0; playerId < players.length; playerId++) {
+		const player = players[playerId];
+		for (let row = 0; row < player.fieldGrid.length; row++) {
+			for (let col = 0; col < player.fieldGrid[row].length; col++) {
+				const card = player.fieldGrid[row][col].card;
+				if (card && card.instanceId === monsterId) {
+					return { playerId, row, col };
+				}
+			}
+		}
+	}
+	return null;
+}
+
+function removeMonsterFromField(players: Player[], monsterId: string): void {
+	for (const player of players) {
+		for (let row = 0; row < player.fieldGrid.length; row++) {
+			for (let col = 0; col < player.fieldGrid[row].length; col++) {
+				const cell = player.fieldGrid[row][col];
+				if (cell.card && cell.card.instanceId === monsterId) {
+					cell.card = null;
+					cell.isWaiting = false;
+					return;
+				}
+			}
+		}
+	}
+}
+
+function isInAttackRange(
+	attackerPos: { playerId: number; row: number; col: number },
+	targetPos: { playerId: number; row: number; col: number },
+	attackRange: number
+): boolean {
+	// 同じプレイヤーのモンスター同士は攻撃できない
+	if (attackerPos.playerId === targetPos.playerId) {
+		return false;
+	}
+
+	// プレイヤー1（上側）とプレイヤー2（下側）の配置を考慮
+	// 攻撃可能範囲の計算
+	const colDistance = Math.abs(attackerPos.col - targetPos.col);
+
+	// 攻撃範囲1: 目の前の敵のみ（同じ列の相手プレイヤーの前衛）
+	if (attackRange === 1) {
+		return colDistance === 0 && attackerPos.row === 0 && targetPos.row === 1;
+	}
+
+	// 攻撃範囲2: 目の前以外の敵（同じ列以外、または後衛）
+	if (attackRange === 2) {
+		// 同じ列の目の前にいる場合は攻撃不可
+		if (colDistance === 0 && attackerPos.row === 0 && targetPos.row === 1) {
+			return false;
+		}
+		// その他の敵プレイヤーのモンスターは攻撃可能
+		return true;
+	}
+
+	return false;
 }
 
 // アクターの作成関数

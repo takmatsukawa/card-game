@@ -14,7 +14,8 @@ const testDeck: Card[] = [
 		type: 'monster',
 		name: 'テストスライム',
 		hp: 10,
-		commands: [{ stoneCost: 1, damage: 5, description: 'テスト攻撃' }]
+		commands: [{ stoneCost: 1, damage: 5, description: 'テスト攻撃', attackRange: 1 }],
+		image: 'test-slime.svg'
 	},
 	{
 		id: 102,
@@ -22,7 +23,8 @@ const testDeck: Card[] = [
 		type: 'monster',
 		name: 'テストゴブリン',
 		hp: 8,
-		commands: [{ stoneCost: 1, damage: 3, description: 'テスト攻撃2' }]
+		commands: [{ stoneCost: 1, damage: 3, description: 'テスト攻撃2', attackRange: 1 }],
+		image: 'test-goblin.svg'
 	},
 	{
 		id: 103,
@@ -30,7 +32,8 @@ const testDeck: Card[] = [
 		type: 'monster',
 		name: 'テストオーク',
 		hp: 12,
-		commands: [{ stoneCost: 1, damage: 4, description: 'テスト攻撃3' }]
+		commands: [{ stoneCost: 1, damage: 4, description: 'テスト攻撃3', attackRange: 2 }],
+		image: 'test-orc.svg'
 	},
 	{
 		id: 101,
@@ -38,7 +41,8 @@ const testDeck: Card[] = [
 		type: 'magic',
 		name: 'テストファイア',
 		stoneCost: 2,
-		description: 'テスト用魔法'
+		description: 'テスト用魔法',
+		image: 'test-fire.svg'
 	}
 ];
 
@@ -85,12 +89,12 @@ describe('ゲーム状態機械', () => {
 			expect(context.players[1].id).toBe(2);
 		});
 
-		it('各プレイヤーのHPが20、ストーンが10で初期化される', () => {
+		it('各プレイヤーのHPが2、ストーンが5で初期化される', () => {
 			const context = actor.getSnapshot().context;
-			expect(context.players[0].hp).toBe(20);
-			expect(context.players[0].stone).toBe(10);
-			expect(context.players[1].hp).toBe(20);
-			expect(context.players[1].stone).toBe(10);
+			expect(context.players[0].hp).toBe(2);
+			expect(context.players[0].stone).toBe(5);
+			expect(context.players[1].hp).toBe(2);
+			expect(context.players[1].stone).toBe(5);
 		});
 
 		it('各プレイヤーの盤面が2x2の空盤面で初期化される', () => {
