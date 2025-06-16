@@ -17,6 +17,22 @@ const testDeck: Card[] = [
 		commands: [{ stoneCost: 1, damage: 5, description: 'テスト攻撃' }]
 	},
 	{
+		id: 102,
+		instanceId: crypto.randomUUID(),
+		type: 'monster',
+		name: 'テストゴブリン',
+		hp: 8,
+		commands: [{ stoneCost: 1, damage: 3, description: 'テスト攻撃2' }]
+	},
+	{
+		id: 103,
+		instanceId: crypto.randomUUID(),
+		type: 'monster',
+		name: 'テストオーク',
+		hp: 12,
+		commands: [{ stoneCost: 1, damage: 4, description: 'テスト攻撃3' }]
+	},
+	{
 		id: 101,
 		instanceId: crypto.randomUUID(),
 		type: 'magic',
@@ -152,19 +168,23 @@ describe('ゲーム状態機械', () => {
 		});
 
 		it('マジックカードは配置できない（ガード条件により無視される）', () => {
-			const context = actor.getSnapshot().context;
+			// カスタムデッキでテストする（マジックカードを含む）
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
+
+			const context = customActor.getSnapshot().context;
 			const magicCard = context.players[0].hand.find((card) => card.type === 'magic')!;
 			const initialStone = context.players[0].stone;
 			const initialFieldState = JSON.parse(JSON.stringify(context.players[0].fieldGrid));
 
-			actor.send({
+			customActor.send({
 				type: 'PLACE_CARD',
 				card: magicCard,
 				row: 0,
 				col: 0
 			});
 
-			const newContext = actor.getSnapshot().context;
+			const newContext = customActor.getSnapshot().context;
 			// ガード条件によりアクションが実行されないため、状態は変わらない
 			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(
 				JSON.stringify(initialFieldState)
@@ -411,6 +431,159 @@ describe('ゲーム状態機械', () => {
 			expect(currentContext.players[0].fieldGrid[0][0].isWaiting).toBe(false);
 			// CPUのモンスターの待機状態は影響されない
 			expect(currentContext.players[1].fieldGrid[0][1].isWaiting).toBe(true);
+		});
+	});
+
+	describe('モンスターの自動前進', () => {
+		it('ターン開始時に後衛のモンスターが前衛の空いたマスに移動する', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
+
+			// 後衛にモンスターを配置
+			const monsterCard = customActor
+				.getSnapshot()
+				.context.players[0].hand.find((card) => card.type === 'monster') as MonsterCard;
+
+			customActor.send({
+				type: 'PLACE_CARD',
+				card: monsterCard,
+				row: 1, // 後衛
+				col: 0
+			});
+
+			// ターンを終了して次のターンを開始
+			customActor.send({ type: 'END_TURN' });
+
+			// CPUターンの後、プレイヤーターンに戻る（自動前進が発生）
+			return new Promise<void>((resolve) => {
+				setTimeout(() => {
+					const context = customActor.getSnapshot().context;
+
+					// 前衛にモンスターが移動していることを確認
+					expect(context.players[0].fieldGrid[0][0].card).toBe(monsterCard);
+					expect(context.players[0].fieldGrid[1][0].card).toBe(null);
+					resolve();
+				}, 2200); // CPU_ACTION_DELAY + 200ms余裕
+			});
+		});
+
+		it(
+			'前衛にモンスターがいる場合は後衛のモンスターは移動しない',
+			() => {
+				const customActor = createGameActor({ customDeck: testDeck });
+				customActor.start();
+
+				const monsters = customActor
+					.getSnapshot()
+					.context.players[0].hand.filter((card) => card.type === 'monster') as MonsterCard[];
+
+				// 前衛と後衛にモンスターを配置
+				customActor.send({
+					type: 'PLACE_CARD',
+					card: monsters[0],
+					row: 0, // 前衛
+					col: 0
+				});
+
+				customActor.send({
+					type: 'PLACE_CARD',
+					card: monsters[1],
+					row: 1, // 後衛
+					col: 0
+				});
+
+				// ターンを終了して次のターンを開始
+				customActor.send({ type: 'END_TURN' });
+
+				// CPUターンの後、プレイヤーターンに戻る
+				return new Promise<void>((resolve) => {
+					setTimeout(() => {
+						const context = customActor.getSnapshot().context;
+
+						// 前衛と後衛のモンスターが変わらないことを確認
+						expect(context.players[0].fieldGrid[0][0].card).toBe(monsters[0]);
+						expect(context.players[0].fieldGrid[1][0].card).toBe(monsters[1]);
+						resolve();
+					}, 2200);
+				});
+			},
+			7000
+		);
+
+		it(
+			'複数列の後衛モンスターが同時に前進できる',
+			() => {
+				const customActor = createGameActor({ customDeck: testDeck });
+				customActor.start();
+
+				const monsters = customActor
+					.getSnapshot()
+					.context.players[0].hand.filter((card) => card.type === 'monster') as MonsterCard[];
+
+				// 両方の後衛にモンスターを配置
+				customActor.send({
+					type: 'PLACE_CARD',
+					card: monsters[0],
+					row: 1, // 後衛
+					col: 0
+				});
+
+				customActor.send({
+					type: 'PLACE_CARD',
+					card: monsters[1],
+					row: 1, // 後衛
+					col: 1
+				});
+
+				// ターンを終了して次のターンを開始
+				customActor.send({ type: 'END_TURN' });
+
+				// CPUターンの後、プレイヤーターンに戻る
+				return new Promise<void>((resolve) => {
+					setTimeout(() => {
+						const context = customActor.getSnapshot().context;
+
+						// 両方の前衛にモンスターが移動していることを確認
+						expect(context.players[0].fieldGrid[0][0].card).toBe(monsters[0]);
+						expect(context.players[0].fieldGrid[0][1].card).toBe(monsters[1]);
+						expect(context.players[0].fieldGrid[1][0].card).toBe(null);
+						expect(context.players[0].fieldGrid[1][1].card).toBe(null);
+						resolve();
+					}, 2200);
+				});
+			},
+			7000
+		);
+
+		it('CPUのモンスターも自動前進する', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
+
+			// プレイヤーターンを終了してCPUターンに移行
+			customActor.send({ type: 'END_TURN' });
+
+			return new Promise<void>((resolve) => {
+				setTimeout(() => {
+					// CPUがモンスターを配置した後の状態を確認
+					const context = customActor.getSnapshot().context;
+					const cpuField = context.players[1].fieldGrid;
+
+					// CPUのフィールドにモンスターが配置されていることを確認
+					const hasMonster = cpuField.some((row) => row.some((cell) => cell.card !== null));
+					expect(hasMonster).toBe(true);
+
+					// 次のCPUターンで自動前進が発生することを確認するため、
+					// プレイヤーターンを終了してもう一度CPUターンに移行
+					customActor.send({ type: 'END_TURN' });
+
+					setTimeout(() => {
+						// 自動前進が正しく動作していることを確認
+						// (具体的な配置は予測できないが、エラーが発生しないことを確認)
+						expect(customActor.getSnapshot().value).toBe('playerTurn');
+						resolve();
+					}, 2200);
+				}, 2200);
+			});
 		});
 	});
 });

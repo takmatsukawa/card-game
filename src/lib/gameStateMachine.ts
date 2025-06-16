@@ -328,6 +328,38 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 					});
 				}
 			}),
+			moveBackRowMonsters: assign({
+				players: ({ context }) => {
+					return context.players.map((player, index) => {
+						if (index === context.currentPlayer) {
+							const newFieldGrid = player.fieldGrid.map((row) => row.map((cell) => ({ ...cell })));
+
+							// 後衛（1行目）のモンスターをチェック
+							for (let col = 0; col < FIELD_GRID_SIZE; col++) {
+								const backRowCell = newFieldGrid[1][col];
+								const frontRowCell = newFieldGrid[0][col];
+
+								// 後衛にモンスターがいて、前衛が空いている場合
+								if (backRowCell.card && !frontRowCell.card) {
+									// モンスターを前進
+									frontRowCell.card = backRowCell.card;
+									frontRowCell.isWaiting = backRowCell.isWaiting;
+
+									// 後衛をクリア
+									backRowCell.card = null;
+									backRowCell.isWaiting = false;
+								}
+							}
+
+							return {
+								...player,
+								fieldGrid: newFieldGrid
+							};
+						}
+						return player;
+					});
+				}
+			}),
 			cpuAction: assign({
 				players: ({ context }) => {
 					const newPlayers = [...context.players];
@@ -387,6 +419,7 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 		context: createInitialContext(options?.customDeck),
 		states: {
 			playerTurn: {
+				entry: 'moveBackRowMonsters',
 				on: {
 					SELECT_CARD: {
 						actions: 'selectCardAndPlaceIfCellSelected'
@@ -408,7 +441,7 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 				}
 			},
 			cpuTurn: {
-				entry: 'cpuAction',
+				entry: ['moveBackRowMonsters', 'cpuAction'],
 				after: {
 					[CPU_ACTION_DELAY]: {
 						target: 'playerTurn',
