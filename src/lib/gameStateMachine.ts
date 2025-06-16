@@ -77,6 +77,7 @@ export interface GameContext {
 	currentPlayer: number;
 	selectedCard: Card | null;
 	selectedCell: { row: number; col: number } | null;
+	selectedMonster: MonsterCard | null;
 	winner: number | null;
 	customDeck?: Card[];
 }
@@ -85,6 +86,7 @@ export interface GameContext {
 export type GameEvent =
 	| { type: 'SELECT_CARD'; card: Card }
 	| { type: 'SELECT_CELL'; row: number; col: number }
+	| { type: 'SELECT_MONSTER'; monster: MonsterCard }
 	| { type: 'END_TURN' }
 	| { type: 'CPU_ACTION_COMPLETE' }
 	| { type: 'RESET_SELECTION' }
@@ -154,6 +156,7 @@ function createInitialContext(customDeck?: Card[]): GameContext {
 		currentPlayer: PLAYER_TURN_INDEX,
 		selectedCard: null,
 		selectedCell: null,
+		selectedMonster: null,
 		winner: null,
 		customDeck
 	};
@@ -216,11 +219,12 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 							(c) => c.instanceId !== event.card.instanceId
 						);
 
-						// 配置成功時は両方の選択状態をクリア
+						// 配置成功時は選択状態をクリア
 						return {
 							players: newPlayers,
 							selectedCard: null,
-							selectedCell: null
+							selectedCell: null,
+							selectedMonster: null
 						};
 					}
 				}
@@ -259,17 +263,29 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 							(c) => c.instanceId !== context.selectedCard!.instanceId
 						);
 
-						// 配置成功時は両方の選択状態をクリア
+						// 配置成功時は選択状態をクリア
 						return {
 							players: newPlayers,
 							selectedCard: null,
-							selectedCell: null
+							selectedCell: null,
+							selectedMonster: null
 						};
 					}
 				}
 
 				// カード配置しない場合は通常のセル選択
 				if (event.type === 'SELECT_CELL') {
+					const currentPlayerObj = context.players[context.currentPlayer];
+					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+
+					// 空のセルをクリックした場合、モンスター選択状態を解除
+					if (!cell.card) {
+						return {
+							selectedCell: { row: event.row, col: event.col },
+							selectedMonster: null
+						};
+					}
+
 					return {
 						selectedCell: { row: event.row, col: event.col }
 					};
@@ -277,9 +293,18 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 
 				return {};
 			}),
+			selectMonster: assign({
+				selectedMonster: ({ event }) => {
+					if (event.type === 'SELECT_MONSTER') {
+						return event.monster;
+					}
+					return null;
+				}
+			}),
 			resetSelection: assign({
 				selectedCard: null,
-				selectedCell: null
+				selectedCell: null,
+				selectedMonster: null
 			}),
 			placeCard: assign({
 				players: ({ context, event }) => {
@@ -308,12 +333,14 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 					return context.players;
 				},
 				selectedCard: null,
-				selectedCell: null
+				selectedCell: null,
+				selectedMonster: null
 			}),
 			switchTurn: assign({
 				currentPlayer: ({ context }) => (context.currentPlayer + 1) % TOTAL_PLAYERS,
 				selectedCard: null,
-				selectedCell: null
+				selectedCell: null,
+				selectedMonster: null
 			}),
 			updateWaitingStatus: assign({
 				players: ({ context }) => {
@@ -472,6 +499,9 @@ export const gameStateMachine = (options?: GameStateMachineOptions) =>
 					},
 					SELECT_CELL: {
 						actions: 'selectCellAndPlaceIfCardSelected'
+					},
+					SELECT_MONSTER: {
+						actions: 'selectMonster'
 					},
 					PLACE_CARD: {
 						guard: 'canPlaceCard',

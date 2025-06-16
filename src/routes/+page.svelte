@@ -11,6 +11,7 @@
 	$: currentPlayer = $snapshot.context.currentPlayer;
 	$: selectedCard = $snapshot.context.selectedCard;
 	$: selectedCell = $snapshot.context.selectedCell;
+	$: selectedMonster = $snapshot.context.selectedMonster;
 
 	// カードの種類に応じた背景色を取得
 	function getCardBackgroundColor(card: Card): string {
@@ -34,7 +35,13 @@
 
 	// マスを選択する関数
 	function selectCell(row: number, col: number) {
-		send({ type: 'SELECT_CELL', row, col });
+		// 自分のモンスターがいるマスをクリックした場合、モンスターを選択
+		const cell = players[0].fieldGrid[row][col];
+		if (cell.card && currentPlayer === 0) {
+			send({ type: 'SELECT_MONSTER', monster: cell.card });
+		} else {
+			send({ type: 'SELECT_CELL', row, col });
+		}
 	}
 </script>
 
@@ -187,11 +194,38 @@
 </div>
 
 <!-- 選択中の状態表示 -->
-{#if selectedCard || selectedCell}
+{#if selectedCard || selectedCell || selectedMonster}
 	<div class="fixed right-4 bottom-4 rounded-lg bg-white p-4 shadow-lg">
 		{#if selectedCard}
 			<p class="font-bold">選択中のカード: {selectedCard.name}</p>
 			<p class="text-sm">マスを選択して配置してください</p>
+		{:else if selectedMonster}
+			<div class="w-64">
+				<p class="mb-3 font-bold">選択中のモンスター</p>
+				<div class="rounded-lg bg-blue-100 p-4">
+					<h3 class="mb-2 text-lg font-bold">{selectedMonster.name}</h3>
+
+					<!-- Monster Image -->
+					<div class="mb-3 flex justify-center">
+						<img
+							src="/images/{selectedMonster.image}"
+							alt={selectedMonster.name}
+							class="h-20 w-16 rounded object-cover"
+						/>
+					</div>
+
+					<p class="mb-2">HP: {selectedMonster.hp}</p>
+					<div class="space-y-2">
+						{#each selectedMonster.commands as command}
+							<div class="bg-opacity-50 rounded bg-white p-2">
+								<p class="text-sm">{command.description}</p>
+								<p class="text-xs">ストーン: {command.stoneCost}</p>
+								<p class="text-xs">ダメージ: {command.damage}</p>
+							</div>
+						{/each}
+					</div>
+				</div>
+			</div>
 		{:else if selectedCell}
 			<p class="font-bold">選択中のマス: 行{selectedCell.row + 1} 列{selectedCell.col + 1}</p>
 			<p class="text-sm">カードを選択して配置してください</p>
