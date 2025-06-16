@@ -113,13 +113,13 @@ function createCardInstance(master: CardMaster): Card {
 
 // サンプルカードの作成
 function createSampleCards(): Card[] {
-	const SAMPLE_CARD_COUNT = 4;
 	const cards: Card[] = [];
 
-	for (let i = 0; i < SAMPLE_CARD_COUNT; i++) {
-		const randomMaster = CARD_MASTER[Math.floor(Math.random() * CARD_MASTER.length)];
-		cards.push(createCardInstance(randomMaster));
-	}
+	// 固定のカードセットを使用してhydrationエラーを防ぐ
+	cards.push(createCardInstance(CARD_MASTER[0])); // マナトット
+	cards.push(createCardInstance(CARD_MASTER[1])); // ビヨンド
+	cards.push(createCardInstance(CARD_MASTER[0])); // マナトット
+	cards.push(createCardInstance(CARD_MASTER[1])); // ビヨンド
 
 	return cards;
 }

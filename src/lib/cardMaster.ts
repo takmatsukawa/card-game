@@ -9,5 +9,13 @@ export const CARD_MASTER: CardMaster[] = [
 		hp: 4,
 		commands: [{ stoneCost: 0, damage: 2, description: 'たいあたり' }],
 		image: 'card-manatot.svg'
+	},
+	{
+		id: 17,
+		type: 'monster',
+		name: 'ビヨンド',
+		hp: 2,
+		commands: [{ stoneCost: 0, damage: 2, description: 'ビヨ～ン' }],
+		image: 'card-beyond.svg'
 	}
 ];

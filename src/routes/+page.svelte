@@ -29,9 +29,7 @@
 
 	// カードを選択する関数
 	function selectCard(card: Card) {
-		if (card.type === 'monster' && players[currentPlayer].stone >= 1) {
-			send({ type: 'SELECT_CARD', card });
-		}
+		send({ type: 'SELECT_CARD', card });
 	}
 
 	// マスを選択する関数
