@@ -6,6 +6,24 @@ import {
 	type MonsterCard
 } from './gameStateMachine.ts';
 
+// テスト用のカスタムデッキ
+const testDeck: Card[] = [
+	{
+		id: 100,
+		type: 'monster',
+		name: 'テストスライム',
+		hp: 10,
+		commands: [{ stoneCost: 1, damage: 5, description: 'テスト攻撃' }]
+	},
+	{
+		id: 101,
+		type: 'magic',
+		name: 'テストファイア',
+		stoneCost: 2,
+		description: 'テスト用魔法'
+	}
+];
+
 describe('ゲーム状態機械', () => {
 	let actor: ReturnType<typeof createGameActor>;
 
@@ -17,6 +35,29 @@ describe('ゲーム状態機械', () => {
 	describe('初期状態', () => {
 		it('プレイヤーターンから開始される', () => {
 			expect(actor.getSnapshot().matches('playerTurn')).toBe(true);
+		});
+
+		it('カスタムデッキでゲームを開始できる', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
+
+			const context = customActor.getSnapshot().context;
+			expect(context.players[0].deck).toEqual(testDeck);
+			expect(context.players[0].hand).toEqual(testDeck);
+			expect(context.players[1].deck).toEqual(testDeck);
+			expect(context.players[1].hand).toEqual(testDeck);
+		});
+
+		it('カスタムデッキのモンスターカードが正しく設定される', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
+
+			const context = customActor.getSnapshot().context;
+			const testMonster = context.players[0].hand.find((card) => card.id === 100) as MonsterCard;
+			expect(testMonster).toBeDefined();
+			expect(testMonster.name).toBe('テストスライム');
+			expect(testMonster.hp).toBe(10);
+			expect(testMonster.commands[0].damage).toBe(5);
 		});
 
 		it('2人のプレイヤーが作成される', () => {
@@ -130,6 +171,30 @@ describe('ゲーム状態機械', () => {
 			expect(newContext.players[0].hand).toContain(magicCard);
 		});
 
+		it('カスタムデッキのモンスターを配置できる', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
+
+			const context = customActor.getSnapshot().context;
+			const testMonster = context.players[0].hand.find((card) => card.id === 100) as MonsterCard;
+			const initialStone = context.players[0].stone;
+
+			customActor.send({
+				type: 'PLACE_CARD',
+				card: testMonster,
+				row: 0,
+				col: 0
+			});
+
+			const newContext = customActor.getSnapshot().context;
+			const placedCard = newContext.players[0].fieldGrid[0][0].card;
+
+			expect(placedCard).toBe(testMonster);
+			expect(placedCard?.name).toBe('テストスライム');
+			expect(placedCard?.hp).toBe(10);
+			expect(newContext.players[0].stone).toBe(initialStone - 1);
+		});
+
 		it('既にカードが配置されているセルには配置できない', () => {
 			// 新しいアクターで独立したテストを実行
 			const testActor = createGameActor();
@@ -168,6 +233,33 @@ describe('ゲーム状態機械', () => {
 			expect(newContext.players[0].stone).toBe(initialStone);
 			// 2枚目のカードは手札に残っている（配置されなかった）
 			expect(newContext.players[0].hand.length).toBe(initialContext.players[0].hand.length);
+		});
+
+		it('カスタムデッキでストーン不足の場合は配置できない', () => {
+			const customActor = createGameActor({ customDeck: testDeck });
+			customActor.start();
+
+			const initialContext = customActor.getSnapshot().context;
+			initialContext.players[0].stone = 0;
+
+			const testMonster = initialContext.players[0].hand.find(
+				(card) => card.id === 100
+			) as MonsterCard;
+			const initialFieldState = JSON.parse(JSON.stringify(initialContext.players[0].fieldGrid));
+
+			customActor.send({
+				type: 'PLACE_CARD',
+				card: testMonster,
+				row: 0,
+				col: 0
+			});
+
+			const newContext = customActor.getSnapshot().context;
+			expect(JSON.stringify(newContext.players[0].fieldGrid)).toBe(
+				JSON.stringify(initialFieldState)
+			);
+			expect(newContext.players[0].stone).toBe(0);
+			expect(newContext.players[0].hand).toContain(testMonster);
 		});
 
 		it('ストーンが不足している場合は配置できない', () => {

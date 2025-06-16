@@ -4,7 +4,7 @@
 	import PlayerImage from '$lib/PlayerImage.svelte';
 
 	// ゲーム状態マシンの使用
-	const { snapshot, send } = useMachine(gameStateMachine);
+	const { snapshot, send } = useMachine(gameStateMachine());
 
 	// 状態マシンから状態を取得
 	$: players = $snapshot.context.players;

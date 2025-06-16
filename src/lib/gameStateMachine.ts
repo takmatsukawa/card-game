@@ -62,6 +62,7 @@ export interface GameContext {
 	selectedCard: Card | null;
 	selectedCell: { row: number; col: number } | null;
 	winner: number | null;
+	customDeck?: Card[];
 }
 
 // イベントの型定義
@@ -128,8 +129,8 @@ function createSampleCards(): Card[] {
 }
 
 // 初期状態の作成
-function createInitialContext(): GameContext {
-	const cards = createSampleCards();
+function createInitialContext(customDeck?: Card[]): GameContext {
+	const cards = customDeck || createSampleCards();
 	return {
 		players: [
 			{
@@ -156,266 +157,274 @@ function createInitialContext(): GameContext {
 		currentPlayer: PLAYER_TURN_INDEX,
 		selectedCard: null,
 		selectedCell: null,
-		winner: null
+		winner: null,
+		customDeck
 	};
 }
 
 // ゲーム状態マシンの定義
-export const gameStateMachine = setup({
-	types: {
-		context: {} as GameContext,
-		events: {} as GameEvent
-	},
-	actions: {
-		selectCard: assign({
-			selectedCard: ({ event }) => {
-				if (event.type === 'SELECT_CARD') {
-					return event.card;
+interface GameStateMachineOptions {
+	customDeck?: Card[];
+}
+
+export const gameStateMachine = (options?: GameStateMachineOptions) =>
+	setup({
+		types: {
+			context: {} as GameContext,
+			events: {} as GameEvent
+		},
+		actions: {
+			selectCard: assign({
+				selectedCard: ({ event }) => {
+					if (event.type === 'SELECT_CARD') {
+						return event.card;
+					}
+					return null;
 				}
-				return null;
-			}
-		}),
-		selectCell: assign({
-			selectedCell: ({ event }) => {
-				if (event.type === 'SELECT_CELL') {
-					return { row: event.row, col: event.col };
+			}),
+			selectCell: assign({
+				selectedCell: ({ event }) => {
+					if (event.type === 'SELECT_CELL') {
+						return { row: event.row, col: event.col };
+					}
+					return null;
 				}
-				return null;
-			}
-		}),
-		selectCardAndPlaceIfCellSelected: assign(({ context, event }) => {
-			if (event.type === 'SELECT_CARD' && context.selectedCell) {
-				const currentPlayerObj = context.players[context.currentPlayer];
-				const { row, col } = context.selectedCell;
-				const cell = currentPlayerObj.fieldGrid[row][col];
+			}),
+			selectCardAndPlaceIfCellSelected: assign(({ context, event }) => {
+				if (event.type === 'SELECT_CARD' && context.selectedCell) {
+					const currentPlayerObj = context.players[context.currentPlayer];
+					const { row, col } = context.selectedCell;
+					const cell = currentPlayerObj.fieldGrid[row][col];
 
-				// カード配置が可能な場合
-				if (
-					!cell.card &&
-					event.card.type === 'monster' &&
-					currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
-				) {
-					const newPlayers = [...context.players];
-					const newCurrentPlayerObj = newPlayers[context.currentPlayer];
-					const newCell = newCurrentPlayerObj.fieldGrid[row][col];
-
-					// ストーンを消費してモンスターを配置
-					newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
-					newCell.card = event.card as MonsterCard;
-					newCell.isWaiting = true;
-
-					// 手札からカードを削除
-					newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter((c) => c.id !== event.card.id);
-
-					// 配置成功時は両方の選択状態をクリア
-					return {
-						players: newPlayers,
-						selectedCard: null,
-						selectedCell: null
-					};
-				}
-			}
-
-			// カード配置しない場合は通常のカード選択
-			if (event.type === 'SELECT_CARD') {
-				return {
-					selectedCard: event.card
-				};
-			}
-
-			return {};
-		}),
-		selectCellAndPlaceIfCardSelected: assign(({ context, event }) => {
-			if (event.type === 'SELECT_CELL' && context.selectedCard) {
-				const currentPlayerObj = context.players[context.currentPlayer];
-				const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-
-				// カード配置が可能な場合
-				if (
-					!cell.card &&
-					context.selectedCard.type === 'monster' &&
-					currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
-				) {
-					const newPlayers = [...context.players];
-					const newCurrentPlayerObj = newPlayers[context.currentPlayer];
-					const newCell = newCurrentPlayerObj.fieldGrid[event.row][event.col];
-
-					// ストーンを消費してモンスターを配置
-					newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
-					newCell.card = context.selectedCard as MonsterCard;
-					newCell.isWaiting = true;
-
-					// 手札からカードを削除
-					newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
-						(c) => c.id !== context.selectedCard!.id
-					);
-
-					// 配置成功時は両方の選択状態をクリア
-					return {
-						players: newPlayers,
-						selectedCard: null,
-						selectedCell: null
-					};
-				}
-			}
-
-			// カード配置しない場合は通常のセル選択
-			if (event.type === 'SELECT_CELL') {
-				return {
-					selectedCell: { row: event.row, col: event.col }
-				};
-			}
-
-			return {};
-		}),
-		resetSelection: assign({
-			selectedCard: null,
-			selectedCell: null
-		}),
-		placeCard: assign({
-			players: ({ context, event }) => {
-				if (event.type === 'PLACE_CARD') {
-					const newPlayers = [...context.players];
-					const currentPlayerObj = newPlayers[context.currentPlayer];
-					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-
+					// カード配置が可能な場合
 					if (
 						!cell.card &&
 						event.card.type === 'monster' &&
 						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
 					) {
+						const newPlayers = [...context.players];
+						const newCurrentPlayerObj = newPlayers[context.currentPlayer];
+						const newCell = newCurrentPlayerObj.fieldGrid[row][col];
+
 						// ストーンを消費してモンスターを配置
-						currentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
-						cell.card = event.card as MonsterCard;
-						cell.isWaiting = true;
+						newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
+						newCell.card = event.card as MonsterCard;
+						newCell.isWaiting = true;
 
 						// 手札からカードを削除
-						currentPlayerObj.hand = currentPlayerObj.hand.filter((c) => c.id !== event.card.id);
-					}
-					return newPlayers;
-				}
-				return context.players;
-			},
-			selectedCard: null,
-			selectedCell: null
-		}),
-		switchTurn: assign({
-			currentPlayer: ({ context }) => (context.currentPlayer + 1) % TOTAL_PLAYERS,
-			selectedCard: null,
-			selectedCell: null
-		}),
-		updateWaitingStatus: assign({
-			players: ({ context }) => {
-				return context.players.map((player, index) => {
-					if (index === context.currentPlayer) {
+						newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
+							(c) => c.id !== event.card.id
+						);
+
+						// 配置成功時は両方の選択状態をクリア
 						return {
-							...player,
-							fieldGrid: player.fieldGrid.map((row) =>
-								row.map((cell) => ({
-									...cell,
-									isWaiting: cell.card ? false : cell.isWaiting
-								}))
-							)
+							players: newPlayers,
+							selectedCard: null,
+							selectedCell: null
 						};
 					}
+				}
 
-					return player;
-				});
-			}
-		}),
-		cpuAction: assign({
-			players: ({ context }) => {
-				const newPlayers = [...context.players];
-				const cpu = newPlayers[CPU_TURN_INDEX];
+				// カード配置しない場合は通常のカード選択
+				if (event.type === 'SELECT_CARD') {
+					return {
+						selectedCard: event.card
+					};
+				}
 
-				// CPUの行動ロジック
-				const emptyCells = findEmptyCells(cpu.fieldGrid);
-				const playableCards = cpu.hand.filter(
-					(card) => card.type === 'monster' && cpu.stone >= MONSTER_PLACEMENT_COST
-				);
+				return {};
+			}),
+			selectCellAndPlaceIfCardSelected: assign(({ context, event }) => {
+				if (event.type === 'SELECT_CELL' && context.selectedCard) {
+					const currentPlayerObj = context.players[context.currentPlayer];
+					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
 
-				// カード配置
-				while (
-					emptyCells.length > 0 &&
-					playableCards.length > 0 &&
-					cpu.stone >= MONSTER_PLACEMENT_COST
-				) {
-					const bestCard = selectBestCard(playableCards);
-					const bestPosition = findBestPosition(emptyCells);
+					// カード配置が可能な場合
+					if (
+						!cell.card &&
+						context.selectedCard.type === 'monster' &&
+						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+					) {
+						const newPlayers = [...context.players];
+						const newCurrentPlayerObj = newPlayers[context.currentPlayer];
+						const newCell = newCurrentPlayerObj.fieldGrid[event.row][event.col];
 
-					// カードを配置
-					const cell = cpu.fieldGrid[bestPosition.row][bestPosition.col];
-					if (!cell.card) {
-						cpu.stone -= MONSTER_PLACEMENT_COST;
-						cell.card = bestCard as MonsterCard;
-						cell.isWaiting = true;
-						cpu.hand = cpu.hand.filter((c) => c.id !== bestCard.id);
+						// ストーンを消費してモンスターを配置
+						newCurrentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
+						newCell.card = context.selectedCard as MonsterCard;
+						newCell.isWaiting = true;
+
+						// 手札からカードを削除
+						newCurrentPlayerObj.hand = newCurrentPlayerObj.hand.filter(
+							(c) => c.id !== context.selectedCard!.id
+						);
+
+						// 配置成功時は両方の選択状態をクリア
+						return {
+							players: newPlayers,
+							selectedCard: null,
+							selectedCell: null
+						};
+					}
+				}
+
+				// カード配置しない場合は通常のセル選択
+				if (event.type === 'SELECT_CELL') {
+					return {
+						selectedCell: { row: event.row, col: event.col }
+					};
+				}
+
+				return {};
+			}),
+			resetSelection: assign({
+				selectedCard: null,
+				selectedCell: null
+			}),
+			placeCard: assign({
+				players: ({ context, event }) => {
+					if (event.type === 'PLACE_CARD') {
+						const newPlayers = [...context.players];
+						const currentPlayerObj = newPlayers[context.currentPlayer];
+						const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+
+						if (
+							!cell.card &&
+							event.card.type === 'monster' &&
+							currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+						) {
+							// ストーンを消費してモンスターを配置
+							currentPlayerObj.stone -= MONSTER_PLACEMENT_COST;
+							cell.card = event.card as MonsterCard;
+							cell.isWaiting = true;
+
+							// 手札からカードを削除
+							currentPlayerObj.hand = currentPlayerObj.hand.filter((c) => c.id !== event.card.id);
+						}
+						return newPlayers;
+					}
+					return context.players;
+				},
+				selectedCard: null,
+				selectedCell: null
+			}),
+			switchTurn: assign({
+				currentPlayer: ({ context }) => (context.currentPlayer + 1) % TOTAL_PLAYERS,
+				selectedCard: null,
+				selectedCell: null
+			}),
+			updateWaitingStatus: assign({
+				players: ({ context }) => {
+					return context.players.map((player, index) => {
+						if (index === context.currentPlayer) {
+							return {
+								...player,
+								fieldGrid: player.fieldGrid.map((row) =>
+									row.map((cell) => ({
+										...cell,
+										isWaiting: cell.card ? false : cell.isWaiting
+									}))
+								)
+							};
+						}
+
+						return player;
+					});
+				}
+			}),
+			cpuAction: assign({
+				players: ({ context }) => {
+					const newPlayers = [...context.players];
+					const cpu = newPlayers[CPU_TURN_INDEX];
+
+					// CPUの行動ロジック
+					const emptyCells = findEmptyCells(cpu.fieldGrid);
+					const playableCards = cpu.hand.filter(
+						(card) => card.type === 'monster' && cpu.stone >= MONSTER_PLACEMENT_COST
+					);
+
+					// カード配置
+					while (
+						emptyCells.length > 0 &&
+						playableCards.length > 0 &&
+						cpu.stone >= MONSTER_PLACEMENT_COST
+					) {
+						const bestCard = selectBestCard(playableCards);
+						const bestPosition = findBestPosition(emptyCells);
+
+						// カードを配置
+						const cell = cpu.fieldGrid[bestPosition.row][bestPosition.col];
+						if (!cell.card) {
+							cpu.stone -= MONSTER_PLACEMENT_COST;
+							cell.card = bestCard as MonsterCard;
+							cell.isWaiting = true;
+							cpu.hand = cpu.hand.filter((c) => c.id !== bestCard.id);
+						}
+
+						emptyCells.splice(emptyCells.indexOf(bestPosition), 1);
+						playableCards.splice(playableCards.indexOf(bestCard), 1);
 					}
 
-					emptyCells.splice(emptyCells.indexOf(bestPosition), 1);
-					playableCards.splice(playableCards.indexOf(bestCard), 1);
+					return newPlayers;
 				}
-
-				return newPlayers;
-			}
-		})
-	},
-	guards: {
-		canPlaceCard: ({ context, event }) => {
-			if (event.type === 'PLACE_CARD') {
-				const currentPlayerObj = context.players[context.currentPlayer];
-				const cell = currentPlayerObj.fieldGrid[event.row][event.col];
-				return (
-					!cell.card &&
-					event.card.type === 'monster' &&
-					currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
-				);
-			}
-			return false;
+			})
 		},
-		isPlayerTurn: ({ context }) => context.currentPlayer === PLAYER_TURN_INDEX,
-		isCpuTurn: ({ context }) => context.currentPlayer === CPU_TURN_INDEX
-	}
-}).createMachine({
-	id: 'cardGame',
-	initial: 'playerTurn',
-	context: createInitialContext(),
-	states: {
-		playerTurn: {
-			on: {
-				SELECT_CARD: {
-					actions: 'selectCardAndPlaceIfCellSelected'
-				},
-				SELECT_CELL: {
-					actions: 'selectCellAndPlaceIfCardSelected'
-				},
-				PLACE_CARD: {
-					guard: 'canPlaceCard',
-					actions: 'placeCard'
-				},
-				RESET_SELECTION: {
-					actions: 'resetSelection'
-				},
-				END_TURN: {
-					target: 'cpuTurn',
-					actions: ['switchTurn', 'updateWaitingStatus']
+		guards: {
+			canPlaceCard: ({ context, event }) => {
+				if (event.type === 'PLACE_CARD') {
+					const currentPlayerObj = context.players[context.currentPlayer];
+					const cell = currentPlayerObj.fieldGrid[event.row][event.col];
+					return (
+						!cell.card &&
+						event.card.type === 'monster' &&
+						currentPlayerObj.stone >= MONSTER_PLACEMENT_COST
+					);
 				}
-			}
-		},
-		cpuTurn: {
-			entry: 'cpuAction',
-			after: {
-				[CPU_ACTION_DELAY]: {
-					target: 'playerTurn',
-					actions: ['switchTurn', 'updateWaitingStatus']
-				}
-			}
-		},
-		gameOver: {
-			type: 'final'
+				return false;
+			},
+			isPlayerTurn: ({ context }) => context.currentPlayer === PLAYER_TURN_INDEX,
+			isCpuTurn: ({ context }) => context.currentPlayer === CPU_TURN_INDEX
 		}
-	}
-});
+	}).createMachine({
+		id: 'cardGame',
+		initial: 'playerTurn',
+		context: createInitialContext(options?.customDeck),
+		states: {
+			playerTurn: {
+				on: {
+					SELECT_CARD: {
+						actions: 'selectCardAndPlaceIfCellSelected'
+					},
+					SELECT_CELL: {
+						actions: 'selectCellAndPlaceIfCardSelected'
+					},
+					PLACE_CARD: {
+						guard: 'canPlaceCard',
+						actions: 'placeCard'
+					},
+					RESET_SELECTION: {
+						actions: 'resetSelection'
+					},
+					END_TURN: {
+						target: 'cpuTurn',
+						actions: ['switchTurn', 'updateWaitingStatus']
+					}
+				}
+			},
+			cpuTurn: {
+				entry: 'cpuAction',
+				after: {
+					[CPU_ACTION_DELAY]: {
+						target: 'playerTurn',
+						actions: ['switchTurn', 'updateWaitingStatus']
+					}
+				}
+			},
+			gameOver: {
+				type: 'final'
+			}
+		}
+	});
 
 // ヘルパー関数
 function findEmptyCells(fieldGrid: FieldGrid): { row: number; col: number }[] {
@@ -450,6 +459,6 @@ function findBestPosition(emptyCells: { row: number; col: number }[]): {
 }
 
 // アクターの作成関数
-export function createGameActor() {
-	return createActor(gameStateMachine);
+export function createGameActor(options?: GameStateMachineOptions) {
+	return createActor(gameStateMachine(options));
 }
