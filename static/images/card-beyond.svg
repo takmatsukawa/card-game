@@ -1,49 +1,58 @@
 <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
   <!-- Character Illustration Only -->
   <g transform="translate(40, 40)">
-    <!-- Cute round body -->
-    <ellipse cx="0" cy="0" rx="20" ry="25" fill="#ef4444"/>
-    <ellipse cx="0" cy="-2" rx="16" ry="20" fill="#f87171"/>
+    <!-- Round body with striped pink background pattern -->
+    <defs>
+      <pattern id="stripes" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(0)">
+        <rect width="4" height="2" fill="#fce7f3"/>
+        <rect y="2" width="4" height="2" fill="#f8bbd9"/>
+      </pattern>
+    </defs>
     
-    <!-- Spring coil pattern on body -->
-    <g stroke="#dc2626" stroke-width="2" fill="none" opacity="0.6">
-      <path d="M -10 -15 Q 0 -18 10 -15 Q 0 -12 -10 -15"/>
-      <path d="M -10 -5 Q 0 -8 10 -5 Q 0 -2 -10 -5"/>
-      <path d="M -10 5 Q 0 2 10 5 Q 0 8 -10 5"/>
-      <path d="M -10 15 Q 0 12 10 15 Q 0 18 -10 15"/>
-    </g>
+    <!-- Main body -->
+    <ellipse cx="0" cy="2" rx="18" ry="22" fill="url(#stripes)"/>
+    <ellipse cx="0" cy="0" rx="15" ry="19" fill="#fce7f3" opacity="0.8"/>
     
-    <!-- Big cute eyes -->
-    <circle cx="-7" cy="-8" r="5" fill="white"/>
-    <circle cx="7" cy="-8" r="5" fill="white"/>
-    <circle cx="-6" cy="-8" r="3" fill="black"/>
-    <circle cx="8" cy="-8" r="3" fill="black"/>
+    <!-- Big cute googly eyes -->
+    <circle cx="-6" cy="-6" r="6" fill="white"/>
+    <circle cx="6" cy="-6" r="6" fill="white"/>
+    <circle cx="-5" cy="-5" r="4" fill="black"/>
+    <circle cx="7" cy="-5" r="4" fill="black"/>
     <!-- Eye highlights -->
-    <circle cx="-5" cy="-9" r="1" fill="white"/>
-    <circle cx="9" cy="-9" r="1" fill="white"/>
+    <circle cx="-4" cy="-7" r="1.5" fill="white"/>
+    <circle cx="8" cy="-7" r="1.5" fill="white"/>
     
-    <!-- Cute smile -->
-    <path d="M -8 2 Q 0 10 8 2" stroke="black" stroke-width="2" fill="none"/>
+    <!-- Small cute smile -->
+    <path d="M -4 4 Q 0 8 4 4" stroke="black" stroke-width="2" fill="none"/>
     
-    <!-- Cheek blush -->
-    <circle cx="-15" cy="2" r="3" fill="#fbbf24" opacity="0.4"/>
-    <circle cx="15" cy="2" r="3" fill="#fbbf24" opacity="0.4"/>
+    <!-- Santa hat -->
+    <path d="M -18 -18 Q -5 -30 8 -22 Q 15 -20 12 -12 Q 8 -8 0 -10 Q -8 -12 -18 -18" fill="#dc2626"/>
+    <!-- Hat fur trim -->
+    <ellipse cx="-2" cy="-10" rx="12" ry="3" fill="white"/>
+    <!-- Hat pompom -->
+    <circle cx="12" cy="-18" r="4" fill="white"/>
     
-    <!-- Cute little arms -->
-    <circle cx="-18" cy="8" r="6" fill="#ef4444"/>
-    <circle cx="18" cy="8" r="6" fill="#ef4444"/>
+    <!-- Cute little arms raised up -->
+    <circle cx="-16" cy="4" r="5" fill="#fce7f3"/>
+    <circle cx="16" cy="4" r="5" fill="#fce7f3"/>
+    <!-- Hand gloves -->
+    <circle cx="-18" cy="0" r="3" fill="white"/>
+    <circle cx="18" cy="0" r="3" fill="white"/>
     
-    <!-- Spring feet -->
-    <ellipse cx="-8" cy="22" rx="4" ry="6" fill="#dc2626"/>
-    <ellipse cx="8" cy="22" rx="4" ry="6" fill="#dc2626"/>
+    <!-- Small feet -->
+    <ellipse cx="-6" cy="20" rx="3" ry="5" fill="#dc2626"/>
+    <ellipse cx="6" cy="20" rx="3" ry="5" fill="#dc2626"/>
     
-    <!-- Bouncy sparkles -->
+    <!-- Bow tie -->
+    <path d="M -4 10 L -8 8 L -8 12 L -4 10 L 4 10 L 8 8 L 8 12 L 4 10 Z" fill="#3b82f6"/>
+    <circle cx="0" cy="10" r="2" fill="#1e40af"/>
+    
+    <!-- Christmas sparkles -->
     <g fill="#fbbf24" opacity="0.8">
-      <polygon points="0,-30 1,-28 3,-28 1,-26 2,-24 0,-25 -2,-24 -1,-26 -3,-28 -1,-28" />
-      <circle cx="-20" cy="-10" r="1"/>
-      <circle cx="22" cy="-5" r="1"/>
-      <circle cx="-15" cy="15" r="1"/>
-      <circle cx="20" cy="18" r="1"/>
+      <polygon points="-25,-5 -24,-3 -22,-3 -24,-1 -23,1 -25,0 -27,1 -26,-1 -28,-3 -26,-3" />
+      <polygon points="24,8 25,10 27,10 25,12 26,14 24,13 22,14 23,12 21,10 23,10" />
+      <circle cx="-12" cy="25" r="1"/>
+      <circle cx="18" cy="-8" r="1"/>
     </g>
   </g>
 </svg>
