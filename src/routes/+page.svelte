@@ -45,7 +45,7 @@
 
 		<!-- 現在のターン表示 -->
 		<div class="mb-4 text-center">
-			<p class="text-xl font-bold">
+			<p class="text-xl font-bold" data-testid="current-turn">
 				現在のターン: {players[currentPlayer].name}
 			</p>
 		</div>
@@ -96,7 +96,7 @@
 			<!-- プレイヤーイメージ（自分） -->
 			<PlayerImage isOpponent={false} />
 			<!-- 2x2マス -->
-			<div class="mt-2 grid grid-cols-2 gap-4">
+			<div class="mt-2 grid grid-cols-2 gap-4" data-testid="player-field">
 				{#each players[0].fieldGrid as row, rowIndex}
 					{#each row as cell, colIndex}
 						<div
@@ -108,6 +108,7 @@
 							onkeydown={(e) => e.key === 'Enter' && selectCell(rowIndex, colIndex)}
 							role="button"
 							tabindex="0"
+							data-testid="field-cell-{rowIndex}-{colIndex}"
 						>
 							{#if cell.card}
 								<div class="text-center">
@@ -135,13 +136,14 @@
 					onkeydown={(e) => e.key === 'Enter' && endTurn()}
 					class="rounded bg-blue-500 px-4 py-2 font-bold text-white hover:bg-blue-600"
 					disabled={currentPlayer !== 0}
+					data-testid="turn-end-button"
 				>
 					ターンエンド
 				</button>
 			</div>
 			<h2 class="mb-4 text-xl font-bold">手札</h2>
-			<div class="flex gap-4 overflow-x-auto p-4">
-				{#each players[0].hand as card}
+			<div class="flex gap-4 overflow-x-auto p-4" data-testid="hand-area">
+				{#each players[0].hand as card, index}
 					<div
 						class="h-64 w-48 flex-shrink-0 {getCardBackgroundColor(
 							card
@@ -153,6 +155,7 @@
 						onkeydown={(e) => e.key === 'Enter' && selectCard(card)}
 						role="button"
 						tabindex="0"
+						data-testid="hand-card-{index}"
 					>
 						<h3 class="mb-2 text-lg font-bold">{card.name}</h3>
 
